@@ -1,0 +1,455 @@
+"TASMSOL"
+.ALTWILD
+
+SETPTB ""			01		1		 NOP 		 1
+PAGEMAP ""			02		1		 NOP 		 1
+STORE ""			03		1		 NOP 		 1
+LOAD ""			04		1		 NOP 		 1
+SYSCALL U8			05		2		 NOP 		 1
+SYSRET ""			06		1		 NOP 		 1
+CALL [A+I16]			07FD		4		 NOP 		 1
+CALL U16			07		3		 NOP 		 1
+SUPCOPY ""			08FD		2		 NOP 		 1
+CALL A			08		1		 NOP 		 1
+SUPSTART ""			09FD		2		 NOP 		 1
+RET			09		1		 NOP 		 1
+JMP [U16+AL]			0AFD		4		 NOP 		 1
+JMP U16			0A		3		 NOP 		 1
+JMP [U16+BL]			0BFD		4		 NOP 		 1
+JMP A			0B		1		 NOP 		 1
+STI ""			0CFD		2		 NOP 		 1
+LODSTAT ""			0C		1		 NOP 		 1
+CLI			0DFD		2		 NOP 		 1
+STOSTAT ""			0D		1		 NOP 		 1
+LODMSKS ""			0EFD		2		 NOP 		 1
+LODFLGS ""			0E		1		 NOP 		 1
+STOMSKS ""			0FFD		2		 NOP 		 1
+STOFLGS ""			0F		1		 NOP 		 1
+
+CLA ""			10FD		2		 NOP 		 1
+MOV A,I16			10		3		 NOP 		 1
+MOV A,PC			11FD		2		 NOP 		 1
+MOV A,B			11		1		 NOP 		 1
+MOV A,G			12FD		2		 NOP 		 1
+MOV A,C			12		1		 NOP 		 1
+MOV A,D			13		1		 NOP 		 1
+MOV A,[U16]			14		3		 NOP 		 1
+MOV A,[D]			15		1		 NOP 		 1
+MOV A,[D+I16]			16		3		 NOP 		 1
+MOV A,[SP+I16]			17FD		4		 NOP 		 1
+MOV A,[BP+I16]			17		3		 NOP 		 1
+MOV A,[SP+D]			18FD		2		 NOP 		 1
+MOV A,[BP+D]			18		1		 NOP 		 1
+MOV AL,I8			19		2		 NOP 		 1
+MOV AL,GL			1AFD		2		 NOP 		 1
+MOV AL,AH			1A		1		 NOP 		 1
+MOV AL,GH			1BFD		2		 NOP 		 1
+MOV AL,BL			1B		1		 NOP 		 1
+MOV AL,BH			1C		1		 NOP 		 1
+MOV AL,[U16]			1D		3		 NOP 		 1
+MOV AL,[D]			1E		1		 NOP 		 1
+MOV AL,[D+I16]			1F		3		 NOP 		 1
+
+MOV AL,[SP+I16]			20FD		4		 NOP 		 1
+MOV AL,[BP+I16]			20		3		 NOP 		 1
+MOV AL,[SP+D]			21FD		2		 NOP 		 1
+MOV AL,[BP+D]			21		1		 NOP 		 1
+MOV AH,I8			22		2		 NOP 		 1
+MOV AH,GL			23FD		2		 NOP 		 1
+MOV AH,AL			23		1		 NOP 		 1
+MOV AH,GH			24FD		2		 NOP 		 1
+MOV AH,BL			24		1		 NOP 		 1
+MOV AH,BH			25		1		 NOP 		 1
+MOV B,I16			26		3		 NOP 		 1
+MOV B,G			27FD		2		 NOP 		 1
+MOV B,A			27		1		 NOP 		 1
+MOV B,C			28		1		 NOP 		 1
+MOV B,[U16]			29		3		 NOP 		 1
+MOV B,[D]			2A		1		 NOP 		 1
+MOV B,[D+I16]			2B		3		 NOP 		 1
+MOV B,[SP+I16]			2CFD		4		 NOP 		 1
+MOV B,[BP+I16]			2C		3		 NOP 		 1
+MOV B,D			2D		1		 NOP 		 1
+MOV BL,I8			2E		2		 NOP 		 1
+MOV BL,GL			2FFD		2		 NOP 		 1
+MOV BL,AL			2F		1		 NOP 		 1
+
+MOV BL,GH			30FD		2		 NOP 		 1
+MOV BL,AH			30		1		 NOP 		 1
+MOV BL,[U16]			31		3		 NOP 		 1
+MOV BL,[D]			32		1		 NOP 		 1
+MOV BL,[D+I16]			33		3		 NOP 		 1
+MOV BL,[SP+I16]			34FD		4		 NOP 		 1
+MOV BL,[BP+I16]			34		3		 NOP 		 1
+MOV BL,[SP+D]			35FD		2		 NOP 		 1
+MOV BL,[BP+D]			35		1		 NOP 		 1
+MOV BH,GL			36FD		2		 NOP 		 1
+MOV BH,AL			36		1		 NOP 		 1
+MOV BH,GH			37FD		2		 NOP 		 1
+MOV BH,BL			37		1		 NOP 		 1
+MOV C,G			38FD		2		 NOP 		 1
+MOV C,U16			38		3		 NOP 		 1
+MOV C,B			39FD		2		 NOP 		 1
+MOV C,A			39		1		 NOP 		 1
+MOV CL,GL			3AFD		2		 NOP 		 1
+MOV CL,U8			3A		2		 NOP 		 1
+MOV D,G			3BFD		2		 NOP 		 1
+MOV D,U16			3B		3		 NOP 		 1
+MOV D,C			3CFD		2		 NOP 		 1
+MOV D,A			3C		1		 NOP 		 1
+MOV [U16],BL			3DFD		4		 NOP 		 1
+MOV [U16],AL			3D		3		 NOP 		 1
+MOV [D],BL			3EFD		2		 NOP 		 1
+MOV [D],AL			3E		1		 NOP 		 1
+MOV [D+ I16],BL			3FFD		4		 NOP 		 1
+MOV [D+ I16],AL			3F		3		 NOP 		 1
+
+MOV [SP+I16],AL			40FD		4		 NOP 		 1
+MOV [BP+I16],AL			40		3		 NOP 		 1
+MOV [SP+D],AL			41FD		2		 NOP 		 1
+MOV [BP+D],AL			41		1		 NOP 		 1
+MOV [U16],B			42FD		4		 NOP 		 1
+MOV [U16],A			42		3		 NOP 		 1
+MOV [D],B			43FD		2		 NOP 		 1
+MOV [D],A			43		1		 NOP 		 1
+MOV [D+I16],B			44FD		4		 NOP 		 1
+MOV [D+I16],A			44		3		 NOP 		 1
+MOV [SP+I16],A			45FD		4		 NOP 		 1
+MOV [BP+I16],A			45		3		 NOP 		 1
+MOV [SP+D],A			46FD		2		 NOP 		 1
+MOV [BP+D],A			46		1		 NOP 		 1
+MOV SP,U16			47FD		4		 NOP 		 1
+MOV SP,A			47		1		 NOP 		 1
+MOV A,SP			48		1		 NOP 		 1
+MOV BP,U16			49FD		4		 NOP 		 1
+MOV BP,A			49		1		 NOP 		 1
+CMC ""			4AFD		2		 NOP 		 1
+MOV A,BP			4A		1		 NOP 		 1
+PUSHA ""			4B		1		 NOP 		 1
+POPA ""			4C		1		 NOP 		 1
+MOV SI,U16			4DFD		4		 NOP 		 1
+MOV SI,A			4D		1		 NOP 		 1
+MOV SI,D			4EFD		2		 NOP 		 1
+MOV A,SI			4E		1		 NOP 		 1
+MOV DI,U16			4FFD		4		 NOP 		 1
+MOV DI,A			4F		1		 NOP 		 1
+
+MOV DI,D			50FD		2		 NOP 		 1
+MOV A,DI			50		1		 NOP 		 1
+INC SP			51FD		2		 NOP 		 1
+ADD SP,I16			51		3		 NOP 		 1
+DEC SP			52FD		2		 NOP 		 1
+SUB SP,I16			52		3		 NOP 		 1
+STC ""			53FD		2		 NOP 		 1
+ADD A,I16			53		3		 NOP 		 1
+CLC ""			54FD		2		 NOP 		 1
+ADD A,B			54		1		 NOP 		 1
+ADD A,C			55FD		2		 NOP 		 1
+ADD B,I16			55		3		 NOP 		 1
+ADD A,D			56FD		2		 NOP 		 1
+ADD B,A			56		1		 NOP 		 1
+ADD B,C			57FD		2		 NOP 		 1
+ADD C,I16			57		3		 NOP 		 1
+ADD B,D			58FD		2		 NOP 		 1
+ADD D,I16			58		3		 NOP 		 1
+ADD C,A			59FD		2		 NOP 		 1
+ADD D,A			59		1		 NOP 		 1
+ADD C,B			5AFD		2		 NOP 		 1
+ADD D,B			5A		1		 NOP 		 1
+ADD C,D			5BFD		2		 NOP 		 1
+ADC A,I16			5B		3		 NOP 		 1
+ADD D,C			5CFD		2		 NOP 		 1
+ADC A,B			5C		1		 NOP 		 1
+SUB A,C			5DFD		2		 NOP 		 1
+ADC B,I16			5D		3		 NOP 		 1
+SUB A,D			5EFD		2		 NOP 		 1
+ADC C,I16			5E		3		 NOP 		 1
+SUB B,A			5FFD		2		 NOP 		 1
+SUB A,I16			5F		3		 NOP 		 1
+
+SUB B,C			60FD		2		 NOP 		 1
+SUB A,B			60		1		 NOP 		 1
+SUB B,D			61FD		2		 NOP 		 1
+SUB B,I16			61		3		 NOP 		 1
+SUB C,A			62FD		2		 NOP 		 1
+SUB C,I16			62		3		 NOP 		 1
+SUB C,B			63FD		2		 NOP 		 1
+SUB D,I16			63		3		 NOP 		 1
+SUB C,D			64FD		2		 NOP 		 1
+SUB D,A			64		1		 NOP 		 1
+SUB D,C			65FD		2		 NOP 		 1
+SUB D,B			65		1		 NOP 		 1
+ADD AL,AH			66FD		2		 NOP 		 1
+SBB A,I16			66		3		 NOP 		 1
+ADD AL,BH			67FD		2		 NOP 		 1
+SBB A,B			67		1		 NOP 		 1
+ADD AL,CL			68FD		2		 NOP 		 1
+SBB B,I16			68		3		 NOP 		 1
+ADD AL,CH			69FD		2		 NOP 		 1
+SBB C,I16			69		3		 NOP 		 1
+ADD AL,DL			6AFD		2		 NOP 		 1
+ADD AL,I8			6A		2		 NOP 		 1
+ADD AL,DH			6BFD		2		 NOP 		 1
+ADD AL,BL			6B		1		 NOP 		 1
+ADD BL,AL			6CFD		2		 NOP 		 1
+ADD BL,I8			6C		2		 NOP 		 1
+ADD BL,AH			6DFD		2		 NOP 		 1
+ADD CL,I8			6D		2		 NOP 		 1
+ADD CL,AL			6EFD		2		 NOP 		 1
+ADD CH,I8			6E		2		 NOP 		 1
+ADD CL,AH			6FFD		2		 NOP 		 1
+SUB AL,I8			6F		2		 NOP 		 1
+
+SUB AL,BL			70		1		 NOP 		 1
+SUB CL,I8			71		2		 NOP 		 1
+SUB CH,I8			72		2		 NOP 		 1
+DEC AH			73		1		 NOP 		 1
+MOV D,B			74		1		 NOP 		 1
+INC AH			75		1		 NOP 		 1
+CMP AH,I8			76		2		 NOP 		 1
+INC B			77FD		2		 NOP 		 1
+INC A			77		1		 NOP 		 1
+MOV G,A			78FD		2		 NOP 		 1
+INC C			78		1		 NOP 		 1
+MOV G,B			79FD		2		 NOP 		 1
+INC D			79		1		 NOP 		 1
+MOV G,C			7AFD		2		 NOP 		 1
+INC AL			7A		1		 NOP 		 1
+MOV G,D			7BFD		2		 NOP 		 1
+INC CL			7B		1		 NOP 		 1
+MOV G,SI			7CFD		2		 NOP 		 1
+INC CH			7C		1		 NOP 		 1
+DEC B			7DFD		2		 NOP 		 1
+DEC A			7D		1		 NOP 		 1
+MOV G,DI			7EFD		2		 NOP 		 1
+DEC C			7E		1		 NOP 		 1
+DEC D			7F		1		 NOP 		 1
+
+DEC AL			80		1		 NOP 		 1
+DEC CL			81		1		 NOP 		 1
+DEC CH			82		1		 NOP 		 1
+MOV CL,GH			83FD		2		 NOP 		 1
+MOV CL,AL			83		1		 NOP 		 1
+NAND AL,U8			84FD		3		 NOP 		 1
+MOV AL,CL			84		1		 NOP 		 1
+NAND A,U16			85FD		4		 NOP 		 1
+AND A,U16			85		3		 NOP 		 1
+NAND A,B			86FD		2		 NOP 		 1
+AND A,B			86		1		 NOP 		 1
+AND BL,U8			87FD		3		 NOP 		 1
+AND AL,U8			87		2		 NOP 		 1
+NAND AL,BL			88FD		2		 NOP 		 1
+AND AL,BL			88		1		 NOP 		 1
+NOR A,U16			89FD		4		 NOP 		 1
+OR A,U16			89		3		 NOP 		 1
+NOR A,B			8AFD		2		 NOP 		 1
+OR A,B			8A		1		 NOP 		 1
+OR BL,U8			8BFD		3		 NOP 		 1
+OR AL,U8			8B		2		 NOP 		 1
+NOR AL,BL			8CFD		2		 NOP 		 1
+OR AL,BL			8C		1		 NOP 		 1
+NOR AL,U8			8DFD		3		 NOP 		 1
+XOR A,U16			8D		3		 NOP 		 1
+ASHR B,CL			8EFD		2		 NOP 		 1
+XOR A,B			8E		1		 NOP 		 1
+ASHR BL,CL			8FFD		2		 NOP 		 1
+XOR AL,U8			8F		2		 NOP 		 1
+
+ASHR B,U8			90FD		3		 NOP 		 1
+XOR AL,BL			90		1		 NOP 		 1
+ASHR BL,U8			91FD		3		 NOP 		 1
+TEST A,U16			91		3		 NOP 		 1
+TEST A,B			92		1		 NOP 		 1
+TEST BL,U8			93FD		3		 NOP 		 1
+TEST AL,U8			93		2		 NOP 		 1
+TEST CL,U8			94FD		3		 NOP 		 1
+TEST AL,BL			94		1		 NOP 		 1
+NEG A			95FD		2		 NOP 		 1
+NOT A			95		1		 NOP 		 1
+NEG AL			96FD		2		 NOP 		 1
+NOT AL			96		1		 NOP 		 1
+NEG B			97FD		2		 NOP 		 1
+NOT B			97		1		 NOP 		 1
+NEG BL			98FD		2		 NOP 		 1
+NOT BL			98		1		 NOP 		 1
+SHL A			99FD		2		 NOP 		 1
+MOV BL,AH			99		1		 NOP 		 1
+SHL AL			9AFD		2		 NOP 		 1
+MOV BH,AH			9A		1		 NOP 		 1
+SHR A			9BFD		2		 NOP 		 1
+MOV BP,SP			9B		1		 NOP 		 1
+SHR AL			9CFD		2		 NOP 		 1
+MOV SP,BP			9C		1		 NOP 		 1
+SHL A,U8			9DFD		3		 NOP 		 1
+SHL A,CL			9D		1		 NOP 		 1
+SHL AL,U8			9EFD		3		 NOP 		 1
+SHL AL,CL			9E		1		 NOP 		 1
+SHL B,U8			9FFD		3		 NOP 		 1
+SHL B,CL			9F		1		 NOP 		 1
+
+SHL BL,U8			A0FD		3		 NOP 		 1
+SHL BL,CL			A0		1		 NOP 		 1
+SHR A,U8			A1FD		3		 NOP 		 1
+SHR A,CL			A1		1		 NOP 		 1
+SHR AL,U8			A2FD		3		 NOP 		 1
+SHR AL,CL			A2		1		 NOP 		 1
+SHR B,U8			A3FD		3		 NOP 		 1
+SHR B,CL			A3		1		 NOP 		 1
+SHR BL,U8			A4FD		3		 NOP 		 1
+SHR BL,CL			A4		1		 NOP 		 1
+ASHR A,U8			A5FD		3		 NOP 		 1
+ASHR A,CL			A5		1		 NOP 		 1
+ASHR AL,U8			A6FD		3		 NOP 		 1
+ASHR AL,CL			A6		1		 NOP 		 1
+MOV BH,U8			A7		2		 NOP 		 1
+MOV AL,CH			A8		1		 NOP 		 1
+LOOPB U16			A9FD		4		 NOP 		 1
+LOOPC U16			A9		3		 NOP 		 1
+SWP A			AAFD		2		 NOP 		 1
+SNEX A			AA		1		 NOP 		 1
+SWP B			ABFD		2		 NOP 		 1
+SNEX B			AB		1		 NOP 		 1
+MUL A,C			ACFD		2		 NOP 		 1
+MUL A,B			AC		1		 NOP 		 1
+MUL AL,BL			AD		1		 NOP 		 1
+DIV A,B			AE		1		 NOP 		 1
+CMP A,I16			AF		3		 NOP 		 1
+
+CMP A,B			B0		1		 NOP 		 1
+CMP A,C			B1		1		 NOP 		 1
+CMP A,D			B2		1		 NOP 		 1
+CMP WORD[U16],U16			B3		5		 NOP 		 1
+CMP WORD[D],U16			B4		3		 NOP 		 1
+CMP WORD[D+I16],U16			B5		5		 NOP 		 1
+CMP WORD[SP+I16],U16			B6FD		6		 NOP 		 1
+CMP WORD[BP+I16],U16			B6		5		 NOP 		 1
+MOV A,[A+I16]			B7		3		 NOP 		 1
+MOV WORD[U16],U16			B8		5		 NOP 		 1
+CMP AL,I8			B9		2		 NOP 		 1
+CMP AL,BL			BA		1		 NOP 		 1
+CMP AL,CL			BB		1		 NOP 		 1
+CMP BYTE[U16],U8			BC		4		 NOP 		 1
+CMP BYTE[D],U8			BD		2		 NOP 		 1
+CMP BYTE[D+I16],U8			BE		4		 NOP 		 1
+CMP BYTE[SP+I16],U8			BFFD		5		 NOP 		 1
+CMP BYTE[BP+I16],U8			BF		4		 NOP 		 1
+
+CMP B,C			C0FD		2		 NOP 		 1
+CMP B,I16			C0		3		 NOP 		 1
+CMP BL,I8			C1		2		 NOP 		 1
+CMP C,I16			C2		3		 NOP 		 1
+ADD BYTE [U16],I8			C3FD		5		 NOP 		 1
+CMP CL,I8			C3		2		 NOP 		 1
+ADD BYTE [D],I8			C4FD		3		 NOP 		 1
+CMP CH,I8			C4		2		 NOP 		 1
+ADD BYTE [D+I16],I8			C5FD		5		 NOP 		 1
+CMP D,I16			C5		3		 NOP 		 1
+ADD BYTE [BP+I16],I8			C6FD		5		 NOP 		 1
+JZ U16			C6		3		 NOP 		 1
+ADD BYTE [SP+I16],I8			C7FD		5		 NOP 		 1
+JNZ U16			C7		3		 NOP 		 1
+ADD WORD [U16],I16			C8FD		6		 NOP 		 1
+JC u16			C8		3		 NOP 		 1
+JLU u16			C8		3		 NOP 		 1
+ADD WORD [D],I16			C9FD		4		 NOP 		 1
+JNC u16			C9		3		 NOP 		 1
+JGEU u16			C9		3		 NOP 		 1
+ADD WORD [D+I16],I16			CAFD		6		 NOP 		 1
+JNEG U16			CA		3		 NOP 		 1
+ADD WORD [BP+I16],I16			CBFD		6		 NOP 		 1
+JPOS U16			CB		3		 NOP 		 1
+ADD WORD [SP+I16],I16			CCFD		6		 NOP 		 1
+JL U16			CC		3		 NOP 		 1
+SUB BYTE [U16],I8			CDFD		5		 NOP 		 1
+JLE U16			CD		3		 NOP 		 1
+SUB BYTE [D],I8			CEFD		3		 NOP 		 1
+JG U16			CE		3		 NOP 		 1
+SUB BYTE [D+I16],I8			CFFD		5		 NOP 		 1
+JGE U16			CF		3		 NOP 		 1
+
+SUB BYTE [BP+I16],I8			D0FD		5		 NOP 		 1
+JLEU U16			D0		3		 NOP 		 1
+SUB BYTE [SP+I16],I8			D1FD		5		 NOP 		 1
+JGU U16			D1		3		 NOP 		 1
+SUB WORD [U16],I16			D2FD		6		 NOP 		 1
+PUSH BP			D2		1		 NOP 		 1
+SUB WORD [D],I16			D3FD		4		 NOP 		 1
+ADD SI,I16			D3		3		 NOP 		 1
+SUB WORD [D+I16],I16			D4FD		6		 NOP 		 1
+ADD DI,I16			D4		3		 NOP 		 1
+SUB WORD [BP+I16],I16			D5FD		6		 NOP 		 1
+SUB SI,I16			D5		3		 NOP 		 1
+SUB WORD [SP+I16],I16			D6FD		6		 NOP 		 1
+SUB DI,I16			D6		3		 NOP 		 1
+PUSH WORD U16			D7FD		4		 NOP 		 1
+PUSH A			D7		1		 NOP 		 1
+PUSH G			D8FD		2		 NOP 		 1
+PUSH B			D8		1		 NOP 		 1
+PUSH C			D9		1		 NOP 		 1
+PUSH D			DA		1		 NOP 		 1
+PUSH BYTE U8			DBFD		3		 NOP 		 1
+PUSH AL			DB		1		 NOP 		 1
+PUSH AH			DC		1		 NOP 		 1
+PUSH BL			DD		1		 NOP 		 1
+ROL A,CL			DEFD		2		 NOP 		 1
+PUSH BH			DE		1		 NOP 		 1
+ROL AL,CL			DFFD		2		 NOP 		 1
+PUSH CL			DF		1		 NOP 		 1
+
+RLC A,CL			E0FD		2		 NOP 		 1
+PUSH CH			E0		1		 NOP 		 1
+RLC AL,CL			E1FD		2		 NOP 		 1
+PUSHF			E1		1		 NOP 		 1
+ROR A,CL			E2FD		2		 NOP 		 1
+PUSH SI			E2		1		 NOP 		 1
+ROR AL,CL			E3FD		2		 NOP 		 1
+PUSH DI			E3		1		 NOP 		 1
+RRC A,CL			E4FD		2		 NOP 		 1
+POP A			E4		1		 NOP 		 1
+RRC AL,CL			E5FD		2		 NOP 		 1
+POP B			E5		1		 NOP 		 1
+ROL B,CL			E6FD		2		 NOP 		 1
+POP C			E6		1		 NOP 		 1
+ROL BL,CL			E7FD		2		 NOP 		 1
+POP D			E7		1		 NOP 		 1
+RLC B,CL			E8FD		2		 NOP 		 1
+POP AL			E8		1		 NOP 		 1
+RLC BL,CL			E9FD		2		 NOP 		 1
+POP AH			E9		1		 NOP 		 1
+ROR B,CL			EAFD		2		 NOP 		 1
+POP BL			EA		1		 NOP 		 1
+ROR BL,CL			EBFD		2		 NOP 		 1
+POP BH			EB		1		 NOP 		 1
+RRC B,CL			ECFD		2		 NOP 		 1
+POP CL			EC		1		 NOP 		 1
+RRC BL,CL			EDFD		2		 NOP 		 1
+POP CH			ED		1		 NOP 		 1
+POPF ""			EE		1		 NOP 		 1
+POP SI			EF		1		 NOP 		 1
+
+POP DI			F0		1		 NOP 		 1
+POP G			F1FD		2		 NOP 		 1
+POP BP			F1		1		 NOP 		 1
+MOV BYTE[U16],U8			F2		4		 NOP 		 1
+REPZ cmpsb ""			F3FD		2		 NOP 		 1
+REPE cmpsb ""			F3FD		2		 NOP 		 1
+CMPSB ""			F3		1		 NOP 		 1
+SCANSB ""			F4		1		 NOP 		 1
+REP MOVSB ""			F5FD		2		 NOP 		 1
+MOVSB ""			F5		1		 NOP 		 1
+REPNZ cmpsb ""			F6FD		2		 NOP 		 1
+REPNZ cmpsb ""			F6FD		2		 NOP 		 1
+LODSB ""			F6		1		 NOP 		 1
+REP STOSB ""			F7FD		2		 NOP 		 1
+STOSB ""			F7		1		 NOP 		 1
+LEA D,[BP+A*2^U8+B]			F8FD		3		 NOP 		 1
+ENTER U16			F8		3		 NOP 		 1
+LEA D,[U16+A*2^U8+B]			F9FD		5		 NOP 		 1
+LEAVE ""			F9		1		 NOP 		 1
+LEA D,[SP+U16]			FAFD		4		 NOP 		 1
+LEA D,[BP+U16]			FA		3		 NOP 		 1
+LEA D,[SI+U16]			FB		3		 NOP 		 1
+LEA D,[DI+U16]			FC		3		 NOP 		 1
+ESC U8			FD		2		 NOP 		 1
+NOP ""			FE		1		 NOP 		 1
+HALT ""			FF		1		 NOP 		 1
