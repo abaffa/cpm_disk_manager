@@ -9,9 +9,28 @@ namespace cpm_disk_manager
     public class Disk
     {
 
-        public int exm { get; set; }
-        public int dsm { get; set; }
-        public int drw { get; set; }
+        public int spt { get; set; }    //DEFW  spt; Number of 128-byte records per track
+
+        public int bsh { get; set; }    //DEFB  bsh; Block shift. 3 => 1k, 4 => 2k, 5 => 4k....
+        public int blm { get; set; }    //DEFB  blm; Block mask. 7 => 1k, 0Fh => 2k, 1Fh => 4k...
+        public int exm { get; set; }    //DEFB  exm; Extent mask, see later
+        public int dsm { get; set; }    //DEFW  dsm; (no.of blocks on the disc)-1
+
+        public int drw { get; set; }    //DEFW  drm; (no.of directory entries)-1
+
+        public int al0 { get; set; }    //DEFB  al0; Directory allocation bitmap, first byte
+        public int al1 { get; set; }    //DEFB  al1; Directory allocation bitmap, second byte
+        public int cks { get; set; }    //DEFW  cks; Checksum vector size, 0 for a fixed disc
+                                        //         ; No.directory entries/4, rounded up.
+        public int off { get; set; }    //DEFW  off; Offset, number of reserved tracks
+
+        //The directory allocation bitmap is interpreted as: (240 0)
+        //             al0              al1
+        //b7b6b5b4b3b2b1b0 b7b6b5b4b3b2b1b0
+        // 1 1 1 1 0 0 0 0  0 0 0 0 0 0 0 0
+
+        // - ie, in this example, the first 4 blocks of the disc contain the directory.
+
 
         Byte[] fileData;
 
@@ -20,15 +39,21 @@ namespace cpm_disk_manager
 
         public Disk()
         {
+            spt = 128;
+            bsh = 5;
+            blm = 31;
             exm = 1;
             dsm = 2047;
             drw = 511;
+            al0 = 240;
+            al1 = 0;
+            cks = 0;
+            off = 0;
         }
 
         public void LoadDisk(Byte[] disk, int start)
         {
             int size = GetDiskSize();
-            fileData = new byte[size];
 
             if (start == 0 || start == 0x4000)
             {
@@ -41,6 +66,8 @@ namespace cpm_disk_manager
                 size = disk.Length - start;
                 dsm = (size / 0x1000) - 1;
             }
+
+            fileData = new byte[size];
             Buffer.BlockCopy(disk, start, fileData, 0, size);
         }
 

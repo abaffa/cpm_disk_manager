@@ -21,13 +21,21 @@ namespace cpm_disk_manager
 
         private ListViewColumnSorter lvwColumnSorter;
 
+        private String current_filename = "";
+        private bool isRenaming = false;
+        private DiskImage diskImage = new DiskImage();
+
+        // memory card
+        DiskInfo selDisk;
+        int selectedVol = -1;
+        long ClustersToRead = 100;
+        //
+
         public frmMain()
         {
             InitializeComponent();
 
             contextMenuStrip1_Opening(null, null);
-
-
 
             openFileToolStripMenuItem.Enabled = false;
             deleteToolStripMenuItem1.Enabled = false;
@@ -83,7 +91,6 @@ namespace cpm_disk_manager
 
             readDiskToolStripMenuItem.Enabled = isElevated;
             writeDiskToolStripMenuItem.Enabled = isElevated;
-            selectedVol = -1;
 
 
 
@@ -94,75 +101,16 @@ namespace cpm_disk_manager
             openRecentToolStripMenuItem_Click(null, null);
         }
 
-        int selectedVol = -1;
-        DiskInfo selDisk;
-
-        String current_filename = "";
-        bool isRenaming = false;
-
-        const int CF_CARD_LBA_SIZE = 0x800;         // temporary small size
-
-        const int DISK_SIZE = 0x800000;
-
-        //int parent_dir_LBA = 0x00;
-        Stack<int> parentStack = new Stack<int>();
-
-        Byte[] fileData;
-
-        Disk disk = new Disk();
-        List<FileEntry> FAT = new List<FileEntry>();
-        int disk_start = 0;
-        int disk_number = 0;
-        int disk_count = 0;
-
-        Byte[] getByteArray(byte[] fileBytes2, int start, int max)
-        {
-            Byte[] ret = new byte[max];
-            for (int i = 0; i < max; i++)
-                ret[i] = fileBytes2[start + i];
-
-            return ret;
-        }
 
 
-        public byte[] ReadAllBytes(BinaryReader reader)
-        {
-            const int bufferSize = 4096;
-            using (var ms = new MemoryStream())
-            {
-                byte[] buffer = new byte[bufferSize];
-                int count;
-                while ((count = reader.Read(buffer, 0, buffer.Length)) != 0)
-                    ms.Write(buffer, 0, count);
-                return ms.ToArray();
-            }
-
-        }
 
         void cmd_ls()
         {
-
-
             listView1.Items.Clear();
-
-            if (parentStack.Count > 0)
-            {
-                ListViewItem lvi = new ListViewItem();
-                lvi.ImageIndex = 0;
-                lvi.Name = "Title";
-                lvi.Text = "..";
-
-                lvi.Tag = "-1";
-
-                lvi.SubItems.Add(new ListViewItem.ListViewSubItem() { Name = "Type", Text = "Directory" });
-
-                listView1.Items.Add(lvi);
-            }
 
             int itemCount = 0;
 
-            //while (index < FST_FILES_PER_DIR)//cmd_ls_L1:
-            foreach (FileEntry f in disk.cmd_ls())
+            foreach (FileEntry f in diskImage.Disk.cmd_ls())
             {
                 int num = f._size;
                 String size = "";
@@ -186,7 +134,7 @@ namespace cpm_disk_manager
                 */
                 lvi.SubItems.Add(new ListViewItem.ListViewSubItem() { Name = "Size", Text = size });
                 lvi.SubItems.Add(new ListViewItem.ListViewSubItem() { Name = "Extension", Text = f._ext.Trim() });
-                
+
                 lvi.SubItems.Add(new ListViewItem.ListViewSubItem() { Name = "_size", Text = num.ToString() });
                 /*
                 lvi.SubItems.Add(new ListViewItem.ListViewSubItem() { Name = "_start", Text = f._start.ToString("X4") });
@@ -196,8 +144,6 @@ namespace cpm_disk_manager
                 listView1.Items.Add(lvi);
 
                 itemCount++;
-
-
             }
 
             if (itemCount == 1)
@@ -218,28 +164,19 @@ namespace cpm_disk_manager
             if (listView1.SelectedItems.Count == 1)
             {
 
-                byte[] data = disk.GetFile((string)listView1.SelectedItems[0].Tag);
-
-                int start_address = 0;
-                try
-                {
-                    IniFile ini = new IniFile(System.Environment.CurrentDirectory + "\\" + "config.ini");
-                    String hex_start = ini.IniReadValue("address_start", "disk_buffer");
-                    start_address = Convert.ToInt32(hex_start, 16);
-                }
-                catch
-                { }
+                byte[] data = diskImage.Disk.GetFile((string)listView1.SelectedItems[0].Tag);
 
                 frmEditFile frmedit = new frmEditFile();
                 frmedit.setTitle("File: " + listView1.SelectedItems[0].Text);
-                frmedit.Start_Address = start_address;
+                frmedit.Start_Address = 0;
+                frmedit.setFilename(listView1.SelectedItems[0].Text);
                 frmedit.setBinary(data);
                 frmedit.ShowDialog(this);
 
                 byte[] newdata = frmedit.getBinary();
-                if (!Utils.CompareByteArrays(data, newdata))
+                if (frmedit.getSaveKeyHit() || (!Utils.CompareByteArrays(data, newdata) && MessageBox.Show("Save file " + listView1.SelectedItems[0].Text + "?", "Confirm save", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes))
                 {
-                    disk.DeleteFile((string)listView1.SelectedItems[0].Tag);
+                    diskImage.Disk.DeleteFile((string)listView1.SelectedItems[0].Tag);
                     cmd_mkbin((string)listView1.SelectedItems[0].Text, frmedit.getBinary());
                 }
             }
@@ -262,53 +199,6 @@ namespace cpm_disk_manager
         }
 
 
-
-        Byte ConvertIntHexToByte(int d)
-        {
-            return Convert.ToByte(d.ToString(), 16);
-
-        }
-
-
-        private static DialogResult ShowInputDialog(ref string input, String Title, Form owner)
-        {
-            System.Drawing.Size size = new System.Drawing.Size(200, 70);
-            Form inputBox = new Form();
-            inputBox.StartPosition = FormStartPosition.CenterParent;
-
-            inputBox.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            inputBox.ClientSize = size;
-            inputBox.Text = Title;
-
-            System.Windows.Forms.TextBox textBox = new TextBox();
-            textBox.Size = new System.Drawing.Size(size.Width - 10, 23);
-            textBox.Location = new System.Drawing.Point(5, 5);
-            textBox.Text = input;
-            inputBox.Controls.Add(textBox);
-
-            Button okButton = new Button();
-            okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            okButton.Name = "okButton";
-            okButton.Size = new System.Drawing.Size(75, 23);
-            okButton.Text = "&OK";
-            okButton.Location = new System.Drawing.Point(size.Width - 80 - 80, 39);
-            inputBox.Controls.Add(okButton);
-
-            Button cancelButton = new Button();
-            cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            cancelButton.Name = "cancelButton";
-            cancelButton.Size = new System.Drawing.Size(75, 23);
-            cancelButton.Text = "&Cancel";
-            cancelButton.Location = new System.Drawing.Point(size.Width - 80, 39);
-            inputBox.Controls.Add(cancelButton);
-
-            inputBox.AcceptButton = okButton;
-            inputBox.CancelButton = cancelButton;
-
-            DialogResult result = inputBox.ShowDialog(owner);
-            input = textBox.Text;
-            return result;
-        }
 
         /*
         int find_file(string title, int lba)
@@ -337,26 +227,10 @@ namespace cpm_disk_manager
 
         void cmd_rmdir(string filename)
         {
-            disk.DeleteFile(filename);
-
-            foreach (FileEntry f in disk.GetFileEntries(filename))
-            {
-                Buffer.BlockCopy(f.GetDataEntry(), 0, fileData, disk_start + f._entry, 32);
-            }
-
-            disk.LoadDisk(fileData, disk_start);
+            diskImage.cmd_rmdir(filename);
             cmd_ls();
         }
 
-
-        public byte[] StringToByteArray(String hex)
-        {
-            int NumberChars = hex.Length;
-            byte[] bytes = new byte[NumberChars / 2];
-            for (int i = 0; i < NumberChars; i += 2)
-                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-            return bytes;
-        }
 
         void cmd_mktxt(string str, string txt)
         {
@@ -369,105 +243,7 @@ namespace cpm_disk_manager
 
         void cmd_mkbin(string str, byte[] data)
         {
-
-            int num_blocks = FileEntry.CalcNumOfBlocks(data.Length);
-
-            int num_entries = (int)Math.Ceiling((decimal)num_blocks / 8);
-
-
-            List<short> reserve_entries = disk.GetFreeDirEntries().Take(num_entries).ToList();
-
-            List<short> reserve_blocks = disk.GetFreeBlocks().Take(num_blocks).ToList();
-
-            string newname = str;
-
-            if (newname.ToArray().Where(p => p == '.').Count() <= 1
-                && newname.IndexOf('\0') == -1
-                && newname.IndexOf('\\') == -1
-                && newname.IndexOf('/') == -1
-                && newname.IndexOf(':') == -1
-                && newname.IndexOf('*') == -1
-                && newname.IndexOf('?') == -1
-                && newname.IndexOf('\'') == -1
-                && newname.IndexOf('\"') == -1
-                && newname.IndexOf('<') == -1
-                && newname.IndexOf('>') == -1
-                && newname.IndexOf('|') == -1
-                && newname.Trim().IndexOf(' ') == -1)
-            {
-                String name = newname.IndexOf('.') > -1 ? newname.Substring(0, newname.IndexOf('.')) : newname;
-                String ext = newname.IndexOf('.') > -1 ? newname.Substring(newname.IndexOf('.') + 1) : "";
-
-                name = name.Length > 0 ? name.Substring(0, Math.Min(name.Length, 8)) : "";
-                ext = ext.Length > 0 ? ext.Substring(0, Math.Min(ext.Length, 3)) : "";
-
-                name = name.PadRight(8);
-                ext = ext.PadRight(3);
-
-                short ex = 0;
-                int data_start = 0;
-
-                foreach (short s in reserve_entries)
-                {
-
-
-
-                    List<short> current_blocks = reserve_blocks.Take(8).ToList();
-                    bool isfull = reserve_blocks.Count > 8 && current_blocks.Count == 8;
-                    int current_block_count = current_blocks.Count();
-
-                    while (current_blocks.Count < 8)
-                        current_blocks.Add(0);
-
-                    int pos = 4 - ((current_block_count - 1) % 4);
-
-                    if (num_entries > 1 || current_block_count > 4)
-                        ex++;
-
-                    FileEntry f = new FileEntry()
-                    {
-                        _entry = (s * 0x20),
-                        _status = 0,
-
-                        _name = name,
-                        _ext = ext,
-                        _ex = ex & 0b11111111,
-                        _s1 = 0x0,
-                        _s2 = (ex >> 8) & 0b11111111,
-                        //_rc = isfull? 0x80 : (int)Math.Ceiling(((decimal)data.Length % 0x1000) / 0x80),
-                        _rc = isfull ? 0x80 : (int)((((double)data.Length / 0x8000) - (current_block_count <= 4 ? 0 : 0.5)) * 0x100),
-                        _entry_number = 0,
-                        _num_records = 0,
-                        _size = 0,
-                        _start = reserve_blocks[0] * 0x1000,
-                        _al = current_blocks.ToArray()
-                    };
-
-                    Buffer.BlockCopy(f.GetDataEntry(), 0, fileData, f._entry + disk_start, 0x20);
-
-                    foreach (short al in f._al)
-                    {
-                        if (al > 0)
-                        {
-                            int block_size = (data.Length - data_start) > 0x1000 ? 0x1000 : (data.Length - data_start);
-                            Buffer.BlockCopy(data, data_start, fileData, (al * 0x1000) + disk_start, block_size);
-
-                            if (block_size < 0x1000)
-                            {
-                                int size_to_complete = 0x1000 - block_size;
-
-                                //Buffer.BlockCopy(Enumerable.Repeat((byte)0x1A, size_to_complete).ToArray(), 0, fileData, (al * 0x1000) + disk_start + block_size, size_to_complete);
-                                Buffer.BlockCopy(Enumerable.Repeat((byte)0x00, size_to_complete).ToArray(), 0, fileData, (al * 0x1000) + disk_start + block_size, size_to_complete);
-
-                            }
-
-                            data_start += 0x1000;
-                        }
-                    }
-
-                    reserve_blocks.RemoveRange(0, Math.Min(8, reserve_blocks.Count));
-                }
-            }
+            diskImage.cmd_mkbin(str, data);
 
             update_disk_list();
         }
@@ -500,27 +276,7 @@ namespace cpm_disk_manager
 
         private bool cmd_rename(String filename, String newname, LabelEditEventArgs e)
         {
-            if (newname.ToArray().Where(p => p == '.').Count() <= 1
-                && newname.IndexOf('\0') == -1
-                && newname.IndexOf('\\') == -1
-                && newname.IndexOf('/') == -1
-                && newname.IndexOf(':') == -1
-                && newname.IndexOf('*') == -1
-                && newname.IndexOf('?') == -1
-                && newname.IndexOf('\'') == -1
-                && newname.IndexOf('\"') == -1
-                && newname.IndexOf('<') == -1
-                && newname.IndexOf('>') == -1
-                && newname.IndexOf('|') == -1
-                && newname.IndexOf(',') == -1
-                && newname.IndexOf(';') == -1
-                && newname.IndexOf('=') == -1
-                && newname.IndexOf('[') == -1
-                && newname.IndexOf(']') == -1
-                && newname.IndexOf('(') == -1
-                && newname.IndexOf(')') == -1
-                && newname.IndexOf('%') == -1
-                && newname.Trim().IndexOf(' ') == -1)
+            if (diskImage.cmd_rename(filename, newname))
             {
                 String name = newname.IndexOf('.') > -1 ? newname.Substring(0, newname.IndexOf('.')) : newname;
                 String ext = newname.IndexOf('.') > -1 ? newname.Substring(newname.IndexOf('.') + 1) : "";
@@ -530,15 +286,6 @@ namespace cpm_disk_manager
 
                 name = name.PadRight(8);
                 ext = ext.PadRight(3);
-
-                disk.RenameFile(filename, name, ext);
-
-                foreach (FileEntry f in disk.GetFileEntries(name + ext))
-                {
-                    Buffer.BlockCopy(f.GetDataEntry(), 0, fileData, disk_start + f._entry, 32);
-                }
-
-                disk.LoadDisk(fileData, disk_start);
 
                 listView1.Items[e.Item].Text = name.Trim() + "." + ext.Trim();
                 listView1.Items[e.Item].Tag = name + ext;
@@ -677,43 +424,13 @@ namespace cpm_disk_manager
 
         }
 
-        bool READ(String fileName)
+        private bool readImageFile(String fileName)
         {
-            if (File.Exists(fileName))
+            if (diskImage.ReadImageFile(fileName))
             {
-
+                selectedVol = -1;
                 current_filename = fileName;
 
-                FileInfo fi = new FileInfo(fileName);
-
-                fileData = new byte[fi.Length];
-
-                using (BinaryReader b = new BinaryReader(
-                File.Open(fileName, FileMode.Open)))
-                {
-                    // 2.
-                    // Position and length variables.
-                    int pos = 0;
-                    // 2A.
-                    // Use BaseStream.
-                    int length = (int)b.BaseStream.Length;
-                    while (pos < length)
-                    {
-
-                        fileData[pos] = b.ReadByte();
-                        // 3.
-                        // Read integer.
-                        //int v = b.ReadInt32();
-                        //Console.WriteLine(v);
-
-                        // 4.
-                        // Advance our position variable.
-                        pos += sizeof(byte);
-                    }
-                }
-
-                disk_count = (int)Math.Ceiling((decimal)fileData.Length / 0x800000);
-                disk_start = disk_number * 0x800000;
                 update_disk_list();
                 return true;
             }
@@ -722,7 +439,7 @@ namespace cpm_disk_manager
 
         private void openImageToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            selectedVol = -1;
+
 
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
@@ -731,10 +448,10 @@ namespace cpm_disk_manager
                 IniFile ini = new IniFile(System.Environment.CurrentDirectory + "\\" + "config.ini");
                 ini.IniWriteValue("general", "last_open", filename);
 
-                if (READ(filename))
+                if (readImageFile(filename))
                 {
                     this.Text = filename;
-                    READ(filename);
+                    readImageFile(filename);
 
                 }
             }
@@ -746,21 +463,15 @@ namespace cpm_disk_manager
             {
                 if (MessageBox.Show("Save file?", "Confirm save", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
-                    WRITE(current_filename);
+                    saveImageFile(current_filename);
                 }
-            };
+            }
 
         }
 
-        bool WRITE(string fileName)
+        private bool saveImageFile(string fileName)
         {
-            using (BinaryWriter b = new BinaryWriter(File.Open(fileName, FileMode.Create)))
-            {
-                for (int i = 0; i < fileData.Length; i++)
-                    b.Write(fileData[i]);
-            }
-
-            return true;
+            return diskImage.SaveImageFile(fileName);
         }
 
 
@@ -773,7 +484,7 @@ namespace cpm_disk_manager
         {
             String str = "";
 
-            if (ShowInputDialog(ref str, "File Name", this) == DialogResult.OK)
+            if (Utils.ShowInputDialog(ref str, "File Name", this) == DialogResult.OK)
                 if (str.Trim() != "")
                 {
                     int start_address = 0;
@@ -789,8 +500,6 @@ namespace cpm_disk_manager
                     frmEditFile frmedit = new frmEditFile();
                     frmedit.setTitle("New Text File: " + str);
                     frmedit.Start_Address = start_address;
-                    frmedit.ShowUndo = false;
-                    frmedit.ShowEditorType = false;
                     frmedit.FileType = frmEditFile.EditorType.Text;
                     frmedit.newFile();
                     frmedit.ShowDialog(this);
@@ -810,7 +519,7 @@ namespace cpm_disk_manager
         {
             String str = "";
 
-            if (ShowInputDialog(ref str, "File Name", this) == DialogResult.OK)
+            if (Utils.ShowInputDialog(ref str, "File Name", this) == DialogResult.OK)
                 if (str.Trim() != "")
                 {
 
@@ -827,8 +536,6 @@ namespace cpm_disk_manager
                     frmEditFile frmedit = new frmEditFile();
                     frmedit.setTitle("New Binary File: " + str);
                     frmedit.Start_Address = start_address;
-                    frmedit.ShowUndo = false;
-                    frmedit.ShowEditorType = false;
                     frmedit.FileType = frmEditFile.EditorType.Binary;
                     frmedit.newFile();
                     frmedit.ShowDialog(this);
@@ -849,7 +556,7 @@ namespace cpm_disk_manager
         {
             String str = "";
 
-            if (ShowInputDialog(ref str, "File Name", this) == DialogResult.OK)
+            if (Utils.ShowInputDialog(ref str, "File Name", this) == DialogResult.OK)
                 if (str.Trim() != "")
                 {
 
@@ -866,8 +573,6 @@ namespace cpm_disk_manager
                     frmEditFile frmedit = new frmEditFile();
                     frmedit.setTitle("New Text File: " + str);
                     frmedit.Start_Address = start_address;
-                    frmedit.ShowUndo = false;
-                    frmedit.ShowEditorType = false;
                     frmedit.FileType = frmEditFile.EditorType.Text;
                     frmedit.newFile();
                     frmedit.ShowDialog(this);
@@ -887,7 +592,7 @@ namespace cpm_disk_manager
         {
             String str = "";
 
-            if (ShowInputDialog(ref str, "File Binary Name", this) == DialogResult.OK)
+            if (Utils.ShowInputDialog(ref str, "File Binary Name", this) == DialogResult.OK)
                 if (str.Trim() != "")
                 {
                     int start_address = 0;
@@ -903,8 +608,6 @@ namespace cpm_disk_manager
                     frmEditFile frmedit = new frmEditFile();
                     frmedit.setTitle("New File: " + str);
                     frmedit.Start_Address = start_address;
-                    frmedit.ShowUndo = false;
-                    frmedit.ShowEditorType = false;
                     frmedit.FileType = frmEditFile.EditorType.Binary;
                     frmedit.newFile();
                     frmedit.ShowDialog(this);
@@ -931,7 +634,7 @@ namespace cpm_disk_manager
                     using (BinaryReader b = new BinaryReader(File.Open(file, FileMode.Open)))
                     {
                         string filename = Path.GetFileName(file);
-                        Byte[] data = ReadAllBytes(b);
+                        Byte[] data = Utils.ReadAllBytes(b);
                         cmd_mkbin(filename, data);
 
                     }
@@ -955,7 +658,6 @@ namespace cpm_disk_manager
 
         private void openRecentToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            selectedVol = -1;
             string filename = "";
             string viewstyle = "";
 
@@ -975,7 +677,7 @@ namespace cpm_disk_manager
             if (filename.Trim() != "")
             {
                 this.Text = filename;
-                READ(filename);
+                readImageFile(filename);
             }
         }
 
@@ -984,7 +686,7 @@ namespace cpm_disk_manager
             if (saveFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 string filename = saveFileDialog1.FileName;
-                if (WRITE(filename))
+                if (saveImageFile(filename))
                     this.Text = filename;
             }
 
@@ -1005,88 +707,88 @@ namespace cpm_disk_manager
         private void editBootToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
-            Byte[] data = fileData.Take(0x200).ToArray();
+            //Byte[] data = fileData.Take(0x200).ToArray();
 
-            int start_address = 0;
-            try
-            {
-                IniFile ini = new IniFile(System.Environment.CurrentDirectory + "\\" + "config.ini");
-                String hex_start = ini.IniReadValue("address_start", "boot_origin");
-                start_address = Convert.ToInt32(hex_start, 16);
-            }
-            catch
-            { }
+            //int start_address = 0;
+            //try
+            //{
+            //    IniFile ini = new IniFile(System.Environment.CurrentDirectory + "\\" + "config.ini");
+            //    String hex_start = ini.IniReadValue("address_start", "boot_origin");
+            //    start_address = Convert.ToInt32(hex_start, 16);
+            //}
+            //catch
+            //{ }
 
-            frmEditFile frmedit = new frmEditFile();
-            frmedit.setTitle("Edit Boot");
-            frmedit.Start_Address = start_address;
-            frmedit.setBinary(data);
-            frmedit.ShowEditorType = false;
-            frmedit.ShowDialog(this);
+            //frmEditFile frmedit = new frmEditFile();
+            //frmedit.setTitle("Edit Boot");
+            //frmedit.Start_Address = start_address;
+            //frmedit.setBinary(data);
+            //frmedit.ShowEditorType = false;
+            //frmedit.ShowDialog(this);
 
-            byte[] newdata = frmedit.getBinary();
-            if (!Utils.CompareByteArrays(data, newdata))
-            {
-                DialogResult dialogResult = MessageBox.Show("Confirm Edit of the \"Boot Sector\"?", "Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (dialogResult == DialogResult.Yes)
-                {
-                    if (frmedit.FileType == frmEditFile.EditorType.Binary)
-                    {
-                        Byte[] filearray = StringToByteArray(frmedit.getText());
+            //byte[] newdata = frmedit.getBinary();
+            //if (!Utils.CompareByteArrays(data, newdata))
+            //{
+            //    DialogResult dialogResult = MessageBox.Show("Confirm Edit of the \"Boot Sector\"?", "Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            //    if (dialogResult == DialogResult.Yes)
+            //    {
+            //        if (frmedit.FileType == frmEditFile.EditorType.Binary)
+            //        {
+            //            Byte[] filearray = Utils.StringToByteArray(frmedit.getText());
 
-                        int i = 0;
-                        for (; i < filearray.Length && i < 0x200; i++)
-                            fileData[i] = filearray[i];
+            //            int i = 0;
+            //            for (; i < filearray.Length && i < 0x200; i++)
+            //                fileData[i] = filearray[i];
 
-                        for (; i < 0x200; i++)
-                            fileData[i] = 0x00;
-                    }
-                }
-            }
+            //            for (; i < 0x200; i++)
+            //                fileData[i] = 0x00;
+            //        }
+            //    }
+            //}
         }
 
         private void editKernelToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
-            Byte[] data = fileData.Skip(0x200).Take(0x4000 - 0x200).ToArray();
+            //Byte[] data = fileData.Skip(0x200).Take(0x4000 - 0x200).ToArray();
 
-            int start_address = 0;
-            try
-            {
-                IniFile ini = new IniFile(System.Environment.CurrentDirectory + "\\" + "config.ini");
-                String hex_start = ini.IniReadValue("address_start", "kernel_origin");
-                start_address = Convert.ToInt32(hex_start, 16);
-            }
-            catch
-            { }
+            //int start_address = 0;
+            //try
+            //{
+            //    IniFile ini = new IniFile(System.Environment.CurrentDirectory + "\\" + "config.ini");
+            //    String hex_start = ini.IniReadValue("address_start", "kernel_origin");
+            //    start_address = Convert.ToInt32(hex_start, 16);
+            //}
+            //catch
+            //{ }
 
-            frmEditFile frmedit = new frmEditFile();
-            frmedit.setTitle("Edit Kernel");
-            frmedit.Start_Address = start_address;
-            frmedit.setBinary(data);
-            frmedit.ShowEditorType = false;
-            frmedit.ShowDialog(this);
+            //frmEditFile frmedit = new frmEditFile();
+            //frmedit.setTitle("Edit Kernel");
+            //frmedit.Start_Address = start_address;
+            //frmedit.setBinary(data);
+            //frmedit.ShowEditorType = false;
+            //frmedit.ShowDialog(this);
 
-            byte[] newdata = frmedit.getBinary();
-            if (!Utils.CompareByteArrays(data, newdata))
-            {
-                DialogResult dialogResult = MessageBox.Show("Confirm Edit of the \"Kernel Sector\"?", "Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (dialogResult == DialogResult.Yes)
-                {
-                    if (frmedit.FileType == frmEditFile.EditorType.Binary)
-                    {
+            //byte[] newdata = frmedit.getBinary();
+            //if (!Utils.CompareByteArrays(data, newdata))
+            //{
+            //    DialogResult dialogResult = MessageBox.Show("Confirm Edit of the \"Kernel Sector\"?", "Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            //    if (dialogResult == DialogResult.Yes)
+            //    {
+            //        if (frmedit.FileType == frmEditFile.EditorType.Binary)
+            //        {
 
-                        Byte[] filearray = StringToByteArray(frmedit.getText());
+            //            Byte[] filearray = Utils.StringToByteArray(frmedit.getText());
 
-                        int i = 0;
-                        for (; i < filearray.Length && (i + 0x200) < 0x4000; i++)
-                            fileData[i + 0x200] = filearray[i];
+            //            int i = 0;
+            //            for (; i < filearray.Length && (i + 0x200) < 0x4000; i++)
+            //                fileData[i + 0x200] = filearray[i];
 
-                        for (; i < 0x4000; i++)
-                            fileData[i + 0x200] = 0x00;
-                    }
-                }
-            }
+            //            for (; i < 0x4000; i++)
+            //                fileData[i + 0x200] = 0x00;
+            //        }
+            //    }
+            //}
         }
 
         private void listView1_ColumnWidthChanged(object sender, ColumnWidthChangedEventArgs e)
@@ -1108,122 +810,11 @@ namespace cpm_disk_manager
         private void newImageToolStripMenuItem_Click(object sender, EventArgs e)
         {
             selectedVol = -1;
-
-            int clusters = 8192;
-            fileData = new byte[512 * clusters];
+            diskImage.NewImage();
             cmd_ls();
         }
 
 
-
-
-        private void readDiskToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            frmDiskSelection frmDisk = new frmDiskSelection();
-            frmDisk.ShowDialog(this);
-
-            selDisk = frmDisk.SelDisk;
-
-            if (selDisk.Id != -1)
-            {
-                DialogResult dialogResult = MessageBox.Show("Load Disk \"" + selDisk.Name + "\"?", "Load Media", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (dialogResult == DialogResult.Yes)
-                {
-                    selectedVol = selDisk.Id;
-                    using (RawDisk disk = new RawDisk(DiskNumberType.Volume, selectedVol, FileAccess.ReadWrite))
-                    {
-                        int clusters = 8192;
-                        fileData = new byte[512 * clusters];
-                        fileData = disk.ReadClusters(0, clusters);
-                    }
-
-                    cmd_ls();
-                }
-            }
-            else
-                selectedVol = -1;
-
-        }
-
-        private void writeDiskToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-
-            if (selectedVol == -1)
-            {
-                frmDiskSelection frmDisk = new frmDiskSelection();
-                frmDisk.ShowDialog(this);
-
-                selDisk = frmDisk.SelDisk;
-
-                if (selDisk.Id != -1)
-                {
-                    DialogResult dialogResult = MessageBox.Show("Save Disk \"" + selDisk.Name + "\"?", "Save Media", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                    if (dialogResult == DialogResult.Yes)
-                    {
-                        int selectedVol = selDisk.Id;
-                        using (RawDisk disk = new RawDisk(DiskNumberType.Volume, selectedVol, FileAccess.ReadWrite))
-                        {
-                            try
-                            {
-                                disk.WriteClusters(fileData, 0);
-                            }
-                            catch (Exception ex)
-                            {
-                                MessageBox.Show(ex.Message, "Save Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
-                        }
-                    }
-                }
-
-            }
-            else
-            {
-                DialogResult dialogResult = MessageBox.Show("Save Disk \"" + selDisk.Name + "\"?", "Save Media", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (dialogResult == DialogResult.Yes)
-                {
-                    int selectedVol = selDisk.Id;
-                    using (RawDisk disk = new RawDisk(DiskNumberType.Volume, selectedVol, FileAccess.ReadWrite))
-                    {
-                        try
-                        {
-                            disk.WriteClusters(fileData, 0);
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show(ex.Message, "Save Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    }
-                }
-            }
-
-
-        }
-
-        long ClustersToRead = 100;
-        public void PresentResult(RawDisk disk)
-        {
-
-
-
-            byte[] data = disk.ReadClusters(0, (int)Math.Min(disk.ClusterCount, ClustersToRead));
-
-            string fatType = Encoding.ASCII.GetString(data, 82, 8);     // Extended FAT parameters have a display name here.
-            bool isFat = fatType.StartsWith("FAT");
-            bool isNTFS = Encoding.ASCII.GetString(data, 3, 4) == "NTFS";
-
-            // Optimization, if it's a known FS, we know it's not all zeroes.
-            bool allZero = (!isNTFS || !isFat) && data.All(s => s == 0);
-
-            Console.WriteLine("Size in bytes : {0:N0}", disk.SizeBytes);
-            Console.WriteLine("Sectors       : {0:N0}", disk.ClusterCount);
-            Console.WriteLine("SectorSize    : {0:N0}", disk.SectorSize);
-            Console.WriteLine("ClusterCount  : {0:N0}", disk.ClusterCount);
-            Console.WriteLine("ClusterSize   : {0:N0}", disk.ClusterSize);
-            Console.WriteLine("Is NTFS       : {0}", isNTFS);
-            Console.WriteLine("Is FAT        : {0}", isFat ? fatType : "False");
-
-            Console.WriteLine("All bytes zero: {0}", allZero);
-        }
 
         private void editorToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -1231,40 +822,33 @@ namespace cpm_disk_manager
             frmedit.setTitle("Editor");
             frmedit.Start_Address = 0;
             frmedit.newFile();
-            frmedit.ShowEditorType = false;
             frmedit.ShowDialog(this);
         }
 
         private void previousDiskToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (disk_number > 0)
-                disk_number--;
-
+            diskImage.PreviousDisk();
             update_disk_list();
         }
 
         private void nextDiskToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (disk_number < disk_count - 1)
-                disk_number++;
-
+            diskImage.NextDisk();
             update_disk_list();
         }
 
         void update_disk_list()
         {
 
-            previousDiskToolStripMenuItem.Enabled = (disk_number > 0);
-            nextDiskToolStripMenuItem.Enabled = (disk_number < disk_count - 1);
+            previousDiskToolStripMenuItem.Enabled = (diskImage.DiskNumber > 0);
+            nextDiskToolStripMenuItem.Enabled = (diskImage.DiskNumber < diskImage.DiskCount - 1);
 
-            disk_start = disk_number * 0x800000;
-            disk.LoadDisk(fileData, disk_start);
             cmd_ls();
         }
 
-        string CurrentDriveLabel()
+        public string CurrentDriveLabel()
         {
-            return (char)(65 + disk_number) + ":";
+            return (char)(65 + diskImage.DiskNumber) + ":";
         }
 
         private void listView1_ColumnClick(object sender, ColumnClickEventArgs e)
@@ -1293,7 +877,7 @@ namespace cpm_disk_manager
             IniFile ini = new IniFile(System.Environment.CurrentDirectory + "\\" + "config.ini");
             ini.IniWriteValue("general", "sort_column", lvwColumnSorter.SortColumn.ToString());
             ini.IniWriteValue("general", "column_order", ((int)lvwColumnSorter.Order).ToString());
-            
+
             refresh_sort_dir();
 
             // Perform the sort with these new sort options.
@@ -1303,25 +887,131 @@ namespace cpm_disk_manager
 
         private void refresh_sort_dir()
         {
-            foreach(ColumnHeader c in listView1.Columns)
-                SetSortArrow(c, SortOrder.None);
+            foreach (ColumnHeader c in listView1.Columns)
+                Utils.SetSortArrow(c, SortOrder.None);
 
-            SetSortArrow(listView1.Columns[lvwColumnSorter.SortColumn], lvwColumnSorter.Order);
+            Utils.SetSortArrow(listView1.Columns[lvwColumnSorter.SortColumn], lvwColumnSorter.Order);
         }
-        private void SetSortArrow(ColumnHeader head, SortOrder order)
+
+        //////////////////////////////////////////////////////////////////////////////////////////////
+        /// CF CARD
+
+        private void readDiskToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            const string ascArrow = " ▲";
-            const string descArrow = " ▼";
+            frmDiskSelection frmDisk = new frmDiskSelection();
+            frmDisk.ShowDialog(this);
 
-            // remove arrow
-            if (head.Text.EndsWith(ascArrow) || head.Text.EndsWith(descArrow))
-                head.Text = head.Text.Substring(0, head.Text.Length - 2);
+            selDisk = frmDisk.SelDisk;
 
-            // add arrow
-            switch (order)
+            if (selDisk.Id != -1)
             {
-                case SortOrder.Ascending: head.Text += ascArrow; break;
-                case SortOrder.Descending: head.Text += descArrow; break;
+                DialogResult dialogResult = MessageBox.Show("Load Disk \"" + selDisk.Name + "\"?", "Load Media", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    selectedVol = selDisk.Id;
+                    diskImage.ReadRawDisk(selectedVol);
+                    cmd_ls();
+                }
+            }
+            else
+                selectedVol = -1;
+
+        }
+
+        private void writeDiskToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+            if (selectedVol == -1)
+            {
+                frmDiskSelection frmDisk = new frmDiskSelection();
+                frmDisk.ShowDialog(this);
+
+                selDisk = frmDisk.SelDisk;
+
+                if (selDisk.Id != -1)
+                {
+                    DialogResult dialogResult = MessageBox.Show("Save Disk \"" + selDisk.Name + "\"?", "Save Media", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    if (dialogResult == DialogResult.Yes)
+                    {
+                        int selectedVol = selDisk.Id;
+
+                        try
+                        {
+                            diskImage.WriteRawDisk(selectedVol);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.Message, "Save Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+
+                    }
+                }
+
+            }
+            else
+            {
+                DialogResult dialogResult = MessageBox.Show("Save Disk \"" + selDisk.Name + "\"?", "Save Media", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    int selectedVol = selDisk.Id;
+
+                    try
+                    {
+                        diskImage.WriteRawDisk(selectedVol);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, "Save Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+
+
+        }
+
+
+        public void PresentResult(RawDisk disk)
+        {
+
+
+
+            byte[] data = disk.ReadClusters(0, (int)Math.Min(disk.ClusterCount, ClustersToRead));
+
+            string fatType = Encoding.ASCII.GetString(data, 82, 8);     // Extended FAT parameters have a display name here.
+            bool isFat = fatType.StartsWith("FAT");
+            bool isNTFS = Encoding.ASCII.GetString(data, 3, 4) == "NTFS";
+
+            // Optimization, if it's a known FS, we know it's not all zeroes.
+            bool allZero = (!isNTFS || !isFat) && data.All(s => s == 0);
+
+            Console.WriteLine("Size in bytes : {0:N0}", disk.SizeBytes);
+            Console.WriteLine("Sectors       : {0:N0}", disk.ClusterCount);
+            Console.WriteLine("SectorSize    : {0:N0}", disk.SectorSize);
+            Console.WriteLine("ClusterCount  : {0:N0}", disk.ClusterCount);
+            Console.WriteLine("ClusterSize   : {0:N0}", disk.ClusterSize);
+            Console.WriteLine("Is NTFS       : {0}", isNTFS);
+            Console.WriteLine("Is FAT        : {0}", isFat ? fatType : "False");
+
+            Console.WriteLine("All bytes zero: {0}", allZero);
+        }
+
+        private void exportToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (listView1.SelectedItems.Count == 1)
+            {
+                byte[] data = diskImage.Disk.GetFile((string)listView1.SelectedItems[0].Tag);
+
+                String filename = listView1.SelectedItems[0].Text;
+
+                saveFileDialog1.FileName = filename;
+                if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
+                {
+                    filename = saveFileDialog1.FileName;
+
+                    File.WriteAllBytes(filename, data);
+                    //MessageBox.Show("FileS, "Save Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                }
             }
         }
     }
