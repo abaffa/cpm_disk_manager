@@ -99,6 +99,20 @@ namespace cpm_disk_manager
 
 
             openRecentToolStripMenuItem_Click(null, null);
+
+
+            int diskimagesize = 64;
+            try
+            {
+                diskimagesize = int.Parse(ini.IniReadValue("general", "disk_image_size"));
+
+            }
+            catch { }
+
+            if (diskimagesize == 128)
+                mBToolStripMenuItem1_Click(this, null);
+            else
+                mBToolStripMenuItem_Click(this, null);
         }
 
 
@@ -428,6 +442,12 @@ namespace cpm_disk_manager
         {
             if (diskImage.ReadImageFile(fileName))
             {
+
+                if(diskImage.DiskImageSize == DiskImageSize._128MB)
+                    mBToolStripMenuItem1_Click(this, null);
+                else
+                    mBToolStripMenuItem_Click(this, null);
+
                 selectedVol = -1;
                 current_filename = fileName;
 
@@ -910,7 +930,8 @@ namespace cpm_disk_manager
                 {
                     selectedVol = selDisk.Id;
                     diskImage.ReadRawDisk(selectedVol);
-                    cmd_ls();
+
+                    update_disk_list();
                 }
             }
             else
@@ -1013,6 +1034,48 @@ namespace cpm_disk_manager
 
                 }
             }
+            else if (listView1.SelectedItems.Count > 2)
+            {
+
+
+                if (folderBrowserDialog1.ShowDialog(this) == DialogResult.OK)
+                {
+
+                    foreach (ListViewItem lvi in listView1.SelectedItems)
+                    {
+                        byte[] data = diskImage.Disk.GetFile((string)lvi.Tag);
+
+                        String filename = lvi.Text;
+
+                        File.WriteAllBytes(folderBrowserDialog1.SelectedPath + "\\" + filename, data);
+                        //MessageBox.Show("FileS, "Save Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void mBToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            mBToolStripMenuItem1.Checked = true;
+            mBToolStripMenuItem.Checked = false;
+            diskImage.DiskImageSize = DiskImageSize._128MB;
+
+            newImageToolStripMenuItem.Text = "New Image(128MB)";
+
+            IniFile ini = new IniFile(System.Environment.CurrentDirectory + "\\" + "config.ini");
+            ini.IniWriteValue("general", "disk_image_size", "128");
+        }
+
+        private void mBToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            mBToolStripMenuItem1.Checked = false;
+            mBToolStripMenuItem.Checked = true;
+            diskImage.DiskImageSize = DiskImageSize._64MB;
+
+            newImageToolStripMenuItem.Text = "New Image(64MB)";
+
+            IniFile ini = new IniFile(System.Environment.CurrentDirectory + "\\" + "config.ini");
+            ini.IniWriteValue("general", "disk_image_size", "64");
         }
     }
 }

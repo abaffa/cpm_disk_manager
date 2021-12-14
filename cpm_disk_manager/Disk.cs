@@ -60,11 +60,18 @@ namespace cpm_disk_manager
                 dsm = 2043;
                 start = 0x4000;
                 size = (dsm + 1) * 0x1000;
+                off = 1;
             }
             else if (size + start > disk.Length)
             {
                 size = disk.Length - start;
                 dsm = (size / 0x1000) - 1;
+                off = 0;
+            }
+            else
+            {
+                dsm = 2047;
+                off = 0;
             }
 
             fileData = new byte[size];

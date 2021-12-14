@@ -51,12 +51,15 @@
             this.binaryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
             this.newImageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
             this.openImageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openRecentToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveImageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.imageSizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.mBToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.mBToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
             this.previousDiskToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.nextDiskToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -85,6 +88,7 @@
             this.toolStripProgressBar1 = new System.Windows.Forms.ToolStripProgressBar();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
+            this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
             this.contextMenuStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -241,6 +245,7 @@
             this.openRecentToolStripMenuItem,
             this.saveImageToolStripMenuItem,
             this.saveAsToolStripMenuItem,
+            this.imageSizeToolStripMenuItem,
             this.toolStripMenuItem5,
             this.previousDiskToolStripMenuItem,
             this.nextDiskToolStripMenuItem,
@@ -290,17 +295,17 @@
             this.deleteToolStripMenuItem1.Text = "Delete";
             this.deleteToolStripMenuItem1.Click += new System.EventHandler(this.deleteToolStripMenuItem1_Click);
             // 
-            // toolStripMenuItem3
-            // 
-            this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-            this.toolStripMenuItem3.Size = new System.Drawing.Size(182, 6);
-            // 
             // newImageToolStripMenuItem
             // 
             this.newImageToolStripMenuItem.Name = "newImageToolStripMenuItem";
             this.newImageToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
             this.newImageToolStripMenuItem.Text = "New Image (64MB)";
             this.newImageToolStripMenuItem.Click += new System.EventHandler(this.newImageToolStripMenuItem_Click);
+            // 
+            // toolStripMenuItem3
+            // 
+            this.toolStripMenuItem3.Name = "toolStripMenuItem3";
+            this.toolStripMenuItem3.Size = new System.Drawing.Size(182, 6);
             // 
             // openImageToolStripMenuItem
             // 
@@ -331,6 +336,31 @@
             this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
             this.saveAsToolStripMenuItem.Text = "Save As";
             this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.saveAsToolStripMenuItem_Click);
+            // 
+            // imageSizeToolStripMenuItem
+            // 
+            this.imageSizeToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.mBToolStripMenuItem,
+            this.mBToolStripMenuItem1});
+            this.imageSizeToolStripMenuItem.Name = "imageSizeToolStripMenuItem";
+            this.imageSizeToolStripMenuItem.Size = new System.Drawing.Size(185, 22);
+            this.imageSizeToolStripMenuItem.Text = "Image Size";
+            // 
+            // mBToolStripMenuItem
+            // 
+            this.mBToolStripMenuItem.Checked = true;
+            this.mBToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.mBToolStripMenuItem.Name = "mBToolStripMenuItem";
+            this.mBToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.mBToolStripMenuItem.Text = "64 MB";
+            this.mBToolStripMenuItem.Click += new System.EventHandler(this.mBToolStripMenuItem_Click);
+            // 
+            // mBToolStripMenuItem1
+            // 
+            this.mBToolStripMenuItem1.Name = "mBToolStripMenuItem1";
+            this.mBToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
+            this.mBToolStripMenuItem1.Text = "128 MB";
+            this.mBToolStripMenuItem1.Click += new System.EventHandler(this.mBToolStripMenuItem1_Click);
             // 
             // toolStripMenuItem5
             // 
@@ -608,6 +638,10 @@
         private System.Windows.Forms.ToolStripMenuItem nextDiskToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem6;
+        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
+        private System.Windows.Forms.ToolStripMenuItem imageSizeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem mBToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem mBToolStripMenuItem1;
     }
 }
 

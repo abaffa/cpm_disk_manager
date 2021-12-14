@@ -8,11 +8,16 @@ using System.Threading.Tasks;
 
 namespace cpm_disk_manager
 {
+    public enum DiskImageSize
+    {
+        _64MB,
+        _128MB
+    }
     public class DiskImage
     {
-        const int CF_CARD_LBA_SIZE = 0x800;         // temporary small size
+        //const int CF_CARD_LBA_SIZE = 0x800;         // temporary small size
 
-        const int DISK_SIZE = 0x800000;
+        //const int DISK_SIZE = 0x800000;
 
         Byte[] fileData;
 
@@ -28,11 +33,27 @@ namespace cpm_disk_manager
         public int DiskNumber { get { return this.disk_number; } }
         public int DiskCount { get { return this.disk_count; } }
 
-        //int clusters = 0x2000; // 4 MB image
-        int clusters = 0x1E848; //64MB Image
+        public DiskImageSize DiskImageSize {get;set;}
+
+
+
+        int clusters_4mb = 0x2000; // 4 MB image
+        int clusters_64mb = 0x1E848; //64MB Image
+        int clusters_128mb = 0x3D090; //128MB Image
+
+        public DiskImage()
+        {
+            DiskImageSize = DiskImageSize._64MB;
+        }
+
+        public DiskImage(DiskImageSize _imageSize)
+        {
+            DiskImageSize = _imageSize;
+        }
 
         public void NewImage()
         {
+            int clusters = DiskImageSize == DiskImageSize._64MB ? clusters_64mb : clusters_128mb;
 
             fileData = new byte[512 * clusters];
             disk = new Disk();
@@ -169,7 +190,7 @@ namespace cpm_disk_manager
                         _s1 = 0x0,
                         _s2 = (ex >> 8) & 0b11111111,
                         //_rc = isfull? 0x80 : (int)Math.Ceiling(((decimal)data.Length % 0x1000) / 0x80),
-                        _rc = isfull ? 0x80 : (int)((((double)data.Length / 0x8000) - (current_block_count <= 4 ? 0 : 0.5)) * 0x100),
+                        _rc = isfull ? 0x80 : (int)Math.Ceiling(((((double)data.Length / 0x8000) - (current_block_count <= 4 ? 0 : 0.5)) * 0x100)),
                         _entry_number = 0,
                         _num_records = 0,
                         _size = 0,
@@ -263,6 +284,8 @@ namespace cpm_disk_manager
             {
                 FileInfo fi = new FileInfo(fileName);
 
+                DiskImageSize = fi.Length > 65000000 ? DiskImageSize._128MB : DiskImageSize._64MB;
+
                 fileData = new byte[fi.Length];
 
                 using (BinaryReader b = new BinaryReader(
@@ -314,11 +337,19 @@ namespace cpm_disk_manager
 
         public void ReadRawDisk(int selectedVol)
         {
+            int clusters = DiskImageSize == DiskImageSize._64MB ? clusters_64mb : clusters_128mb;
+
             using (RawDisk disk = new RawDisk(DiskNumberType.Volume, selectedVol, FileAccess.ReadWrite))
             {
                 fileData = new byte[512 * clusters];
                 fileData = disk.ReadClusters(0, clusters);
             }
+
+            disk_count = (int)Math.Ceiling((decimal)fileData.Length / 0x800000);
+            disk_start = disk_number * 0x800000;
+            if (disk_start == 0) disk_start = 0x4000;
+
+            this.UpdateDiskList();
         }
 
         public void WriteRawDisk(int selectedVol)
