@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("CP/M Disk Manager")]
 [assembly: AssemblyDescription("CP/M Disk Manager")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Baffasoft")]
 [assembly: AssemblyProduct("CP/M Disk Manager")]
 [assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]

@@ -119,7 +119,7 @@ namespace cpm_disk_manager
         {
             filename = _filename;
         }
-        
+
 
         public void newFile()
         {
@@ -273,44 +273,59 @@ namespace cpm_disk_manager
 
         private void textBox1_DragDrop(object sender, DragEventArgs e)
         {
-
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            foreach (string file in files)
+            try
             {
-                if (File.Exists(file))
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                foreach (string file in files)
                 {
-                    using (BinaryReader b = new BinaryReader(File.Open(file, FileMode.Open)))
+                    if (File.Exists(file))
                     {
+                        using (BinaryReader b = new BinaryReader(File.Open(file, FileMode.Open)))
+                        {
 
-                        //string filename = Path.GetFileName(file);
+                            //string filename = Path.GetFileName(file);
 
-                        current_data = Utils.ReadAllBytes(b);
+                            current_data = Utils.ReadAllBytes(b);
 
-                        if (original_data.LongLength == 0)
-                            original_data = current_data;
+                            if (original_data.LongLength == 0)
+                                original_data = current_data;
 
-                        set_entry();
-                        calculate_checksum();
+                            set_entry();
+                            calculate_checksum();
+
+                        }
 
                     }
 
                 }
 
             }
+            catch
+            {
+                MessageBox.Show("An error occurred while reading the file.\nPlease check the file.", "Reading Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
 
         }
 
         private void exportFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Byte[] filearray = Utils.StringToByteArray(textBox1.Text);
-            saveFileDialog1.FileName = filename;
-            if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
+            try
             {
-                string filename = saveFileDialog1.FileName;
+                Byte[] filearray = Utils.StringToByteArray(textBox1.Text);
+                saveFileDialog1.FileName = filename;
+                if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
+                {
+                    string filename = saveFileDialog1.FileName;
 
-                File.WriteAllBytes(filename, filearray);
-                //MessageBox.Show("FileS, "Save Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    File.WriteAllBytes(filename, filearray);
+                    //MessageBox.Show("FileS, "Save Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
+                }
+
+            }
+            catch
+            {
+                MessageBox.Show("An error occurred while writing the file.\nPlease check the file.", "Writing Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

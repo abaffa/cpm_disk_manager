@@ -25,9 +25,13 @@ namespace cpm_disk_manager
         private bool isRenaming = false;
         private DiskImage diskImage = new DiskImage();
 
+
+        private Dictionary<string, byte[]> clipboard = new Dictionary<string, byte[]>();
+
         // memory card
         DiskInfo selDisk;
         int selectedVol = -1;
+        int selectedUser = -1;
         long ClustersToRead = 100;
         //
 
@@ -98,8 +102,6 @@ namespace cpm_disk_manager
             nextDiskToolStripMenuItem.Enabled = false;
 
 
-            openRecentToolStripMenuItem_Click(null, null);
-
 
             int diskimagesize = 64;
             try
@@ -120,6 +122,7 @@ namespace cpm_disk_manager
 
         void cmd_ls()
         {
+            listView1.SelectedItems.Clear();
             listView1.Items.Clear();
 
             int itemCount = 0;
@@ -285,6 +288,25 @@ namespace cpm_disk_manager
             {
                 listView1_DoubleClick(null, null);
             }
+            else if (e.Modifiers == Keys.Control && e.KeyCode == Keys.A)
+            {
+                foreach (ListViewItem item in listView1.Items)
+                {
+                    item.Selected = true;
+                }
+            }
+
+            else if (e.Modifiers == Keys.Control && e.KeyCode == Keys.C && listView1.SelectedItems.Count > 0)
+            {
+                copyToolStripMenuItem_Click(null, null);
+            }
+
+            else if (e.Modifiers == Keys.Control && e.KeyCode == Keys.V && clipboard.Count > 0)
+            {
+                pasteToolStripMenuItem_Click(null, null);
+            }
+
+
         }
 
 
@@ -325,8 +347,18 @@ namespace cpm_disk_manager
         {
             newFileToolStripMenuItem.Enabled = listView1.SelectedItems.Count == 0;
 
+            editToolStripMenuItem.Enabled = listView1.SelectedItems.Count == 1;
             renameToolStripMenuItem.Enabled = listView1.SelectedItems.Count == 1;
-            deleteToolStripMenuItem.Enabled = listView1.SelectedItems.Count == 1;
+            deleteToolStripMenuItem.Enabled = listView1.SelectedItems.Count != 0;
+            exportToolStripMenuItem.Enabled = listView1.SelectedItems.Count != 0;
+
+            copyToolStripMenuItem.Enabled = listView1.SelectedItems.Count != 0;
+            userToolStripMenuItem.Enabled = listView1.SelectedItems.Count != 0;
+
+            pasteToolStripMenuItem.Enabled = clipboard.Count != 0;
+
+
+            renToUppercaseToolStripMenuItem.Enabled = listView1.SelectedItems.Count != 0;
         }
 
         private void renameToolStripMenuItem_Click(object sender, EventArgs e)
@@ -345,6 +377,22 @@ namespace cpm_disk_manager
                 if (dialogResult == DialogResult.Yes)
                     cmd_rmdir((string)listView1.SelectedItems[0].Tag);
             }
+            else if (listView1.SelectedItems.Count > 1)
+            {
+
+                DialogResult dialogResult = MessageBox.Show("Confirm Delete all \"" + listView1.SelectedItems.Count.ToString() + "\" files?", "Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (dialogResult == DialogResult.Yes)
+                {
+
+                    foreach (ListViewItem item in listView1.SelectedItems)
+                    {
+                        cmd_rmdir((string)item.Tag);
+                        item.Selected = false;
+                    }
+
+                    listView1_ItemSelectionChanged(null, null);
+                }
+            }
         }
 
         private void listView1_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
@@ -352,6 +400,8 @@ namespace cpm_disk_manager
             int itemCount = listView1.SelectedItems.Count;
             int itemSize = 0;
             String itemSizeText = "";
+
+            selectedUser = -1;
 
             if (itemCount != 0)
             {
@@ -377,14 +427,61 @@ namespace cpm_disk_manager
             {
                 statusSelectedCount.Text = itemCount.ToString() + " item selected";
                 statusSelectedSize.Text = itemSizeText;
+
+                List<FileEntry> fileEntries = diskImage.Disk.GetFileEntry((string)listView1.SelectedItems[0].Tag);
+
+                if (fileEntries != null)
+                {
+                    if (fileEntries[0]._status < toolStripComboBox1.Items.Count)
+                    {
+                        toolStripComboBox1.SelectedIndex = fileEntries[0]._status;
+                        selectedUser = fileEntries[0]._status;
+                    }
+                }
+
             }
             else if (itemCount > 1)
             {
                 statusSelectedCount.Text = itemCount.ToString() + " items selected";
                 statusSelectedSize.Text = itemSizeText;
+
+                int files_users = -1;
+                bool many_users = false;
+
+                foreach (ListViewItem item in listView1.SelectedItems)
+                {
+                    List<FileEntry> fileEntries = diskImage.Disk.GetFileEntry((string)item.Tag);
+
+                    if (fileEntries != null)
+                    {
+                        if (fileEntries[0]._status < toolStripComboBox1.Items.Count)
+                        {
+
+                            if (files_users == -1)
+                            {
+                                selectedUser = fileEntries[0]._status;
+                                files_users = fileEntries[0]._status;
+
+
+                            }
+                            else if (files_users != fileEntries[0]._status)
+                            {
+                                many_users = true;
+                            }
+                        }
+                    }
+                }
+
+                if (many_users)
+                    toolStripComboBox1.SelectedIndex = -1;
+                else
+                    toolStripComboBox1.SelectedIndex = files_users;
             }
             else
+            {
                 statusSelectedCount.Text = "";
+                statusSelectedSize.Text = "";
+            }
 
 
             newFileToolStripMenuItem1.Enabled = listView1.SelectedItems.Count == 0;
@@ -440,10 +537,10 @@ namespace cpm_disk_manager
 
         private bool readImageFile(String fileName)
         {
-            if (diskImage.ReadImageFile(fileName))
+            if (diskImage.ReadImageFile(fileName, toolStripProgressBar1))
             {
 
-                if(diskImage.DiskImageSize == DiskImageSize._128MB)
+                if (diskImage.DiskImageSize == DiskImageSize._128MB)
                     mBToolStripMenuItem1_Click(this, null);
                 else
                     mBToolStripMenuItem_Click(this, null);
@@ -459,8 +556,11 @@ namespace cpm_disk_manager
 
         private void openImageToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
-
+            openFileDialog1.FileName = current_filename;
+            openFileDialog1.AddExtension = true;
+            openFileDialog1.DefaultExt = "dsk";
+            openFileDialog1.CheckFileExists = true;
+            openFileDialog1.Filter = "Disk Images (*.dsk, *.img)|*.dsk; *.img|All Files (*.*)|*.*";
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 string filename = openFileDialog1.FileName;
@@ -470,9 +570,12 @@ namespace cpm_disk_manager
 
                 if (readImageFile(filename))
                 {
-                    this.Text = filename;
-                    readImageFile(filename);
-
+                    this.Text = "CP/M Disk Manager " + filename;
+                }
+                else
+                {
+                    current_filename = "";
+                    this.Text = "CP/M Disk Manager (No File)";
                 }
             }
         }
@@ -483,7 +586,14 @@ namespace cpm_disk_manager
             {
                 if (MessageBox.Show("Save file?", "Confirm save", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
-                    saveImageFile(current_filename);
+                    
+                    if(saveImageFile(current_filename))
+                        this.Text = "CP/M Disk Manager " + current_filename;
+                    else
+                    {
+                        current_filename = "";
+                        //this.Text = "CP/M Disk Manager (No File)";
+                    }
                 }
             }
 
@@ -491,7 +601,7 @@ namespace cpm_disk_manager
 
         private bool saveImageFile(string fileName)
         {
-            return diskImage.SaveImageFile(fileName);
+            return diskImage.SaveImageFile(fileName, toolStripProgressBar1);
         }
 
 
@@ -696,18 +806,39 @@ namespace cpm_disk_manager
 
             if (filename.Trim() != "")
             {
-                this.Text = filename;
-                readImageFile(filename);
+                if (readImageFile(filename))
+                {
+                    this.Text = "CP/M Disk Manager " + filename;
+                }
+                else
+                {
+                    current_filename = "";
+                    this.Text = "CP/M Disk Manager (No File)";
+                }
             }
         }
 
         private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
         {
+
+            saveFileDialog1.FileName = current_filename;
+            saveFileDialog1.AddExtension = true;
+            saveFileDialog1.DefaultExt = "dsk";
+            saveFileDialog1.CheckFileExists = true;
+            saveFileDialog1.Filter = "Disk Images (*.dsk, *.img)|*.dsk; *.img|All Files (*.*)|*.*";
+
             if (saveFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 string filename = saveFileDialog1.FileName;
                 if (saveImageFile(filename))
-                    this.Text = filename;
+                {
+                    this.Text = "CP/M Disk Manager " + filename;
+                }
+                else
+                {
+                    current_filename = "";
+                    //this.Text = "CP/M Disk Manager (No File)";
+                }
             }
 
         }
@@ -829,9 +960,17 @@ namespace cpm_disk_manager
 
         private void newImageToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            
+
             selectedVol = -1;
             diskImage.NewImage();
             cmd_ls();
+
+
+            if(diskImage.DiskImageSize == DiskImageSize._128MB)
+                this.Text = "CP/M Disk Manager (New 128MB image)";
+            else
+                this.Text = "CP/M Disk Manager (New 64MB image)";
         }
 
 
@@ -1034,7 +1173,7 @@ namespace cpm_disk_manager
 
                 }
             }
-            else if (listView1.SelectedItems.Count > 2)
+            else if (listView1.SelectedItems.Count > 1)
             {
 
 
@@ -1076,6 +1215,106 @@ namespace cpm_disk_manager
 
             IniFile ini = new IniFile(System.Environment.CurrentDirectory + "\\" + "config.ini");
             ini.IniWriteValue("general", "disk_image_size", "64");
+        }
+
+        private void toolStripComboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (selectedUser > -1 && toolStripComboBox1.SelectedIndex != -1)
+            {
+
+
+                if (listView1.SelectedItems.Count == 1)
+                {
+
+                    diskImage.cmd_chuser((string)listView1.SelectedItems[0].Tag, toolStripComboBox1.SelectedIndex);
+
+                    cmd_ls();
+
+                    contextMenuStrip1.Hide();
+                }
+                else if (listView1.SelectedItems.Count > 1)
+                {
+                    foreach (ListViewItem item in listView1.SelectedItems)
+                    {
+                        diskImage.cmd_chuser((string)item.Tag, toolStripComboBox1.SelectedIndex);
+                    }
+
+                    cmd_ls();
+
+                    contextMenuStrip1.Hide();
+                }
+            }
+        }
+
+        private void copyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            clipboard.Clear();
+
+
+            foreach (ListViewItem item in listView1.SelectedItems)
+            {
+                String filename = (string)item.Tag;
+                filename = filename.PadRight(11);
+                filename = filename.Substring(0, 8).Trim() + "." + filename.Substring(8, 3).Trim();
+
+                clipboard.Add(filename, diskImage.Disk.GetFile((string)item.Tag));
+            }
+
+        }
+
+        private void pasteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+            HashSet<String> files = new HashSet<string>();
+            foreach (FileEntry f in diskImage.Disk.cmd_ls())
+            {
+                String filename = f._name.Trim() + "." + f._ext.Trim();
+                if (!files.Contains(filename))
+                    files.Add(filename);
+            }
+
+            foreach (String filename in clipboard.Keys)
+            {
+
+                if (files.Contains(filename))
+                {
+                    DialogResult dialogResult = MessageBox.Show("Overwrite File \"" + filename + "\"?", "Overwrite", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                    if (dialogResult == DialogResult.Yes)
+                    {
+                        diskImage.Disk.DeleteFile(filename);
+                        Byte[] data = clipboard[filename];
+                        cmd_mkbin(filename, data);
+                    }
+                    else if (dialogResult == DialogResult.Cancel)
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    Byte[] data = clipboard[filename];
+                    cmd_mkbin(filename, data);
+                }
+            }
+            cmd_ls();
+        }
+
+        private void frmMain_Shown(object sender, EventArgs e)
+        {
+            openRecentToolStripMenuItem_Click(null, null);
+        }
+
+        private void renToUppercaseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            foreach (ListViewItem item in listView1.SelectedItems)
+            {
+                String filename = (string)item.Tag.ToString().ToUpper();
+                filename = filename.PadRight(11);
+                filename = filename.Substring(0, 8).Trim() + "." + filename.Substring(8, 3).Trim();
+
+                diskImage.cmd_rename(item.Tag.ToString(), filename);
+            }
+            cmd_ls();
         }
     }
 }

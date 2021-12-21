@@ -210,6 +210,23 @@ namespace cpm_disk_manager
             return file_entries[filename];
         }
 
+        public List<FileEntry> GetFileEntry(string filename)
+        {
+            if (file_entries.ContainsKey(filename))
+                return file_entries[filename];
+            return null;
+        }
+
+
+        public void SetUser(string filename, int new_user)
+        {
+
+            for(int i = 0; i < file_entries[filename].Count; i++)
+            {
+                file_entries[filename][i]._status = new_user;
+            }
+        }
+
         public byte[] GetFile(string filename)
         {
             int c = 0;
@@ -272,7 +289,7 @@ namespace cpm_disk_manager
                     {
                         foreach (short s in fe._al)
                         {
-                            if(s > 0)
+                            if (s > 0)
                                 used.Add(s);
                         }
                     }
@@ -305,13 +322,13 @@ namespace cpm_disk_manager
                     }
                 }
             }
-            
+
             for (short i = 0; i <= drw; i++)
             {
                 if (!used.Contains(i))
                     ret.Add(i);
             }
-            
+
             return ret;
         }
     }

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace cpm_disk_manager
 {
@@ -33,7 +34,7 @@ namespace cpm_disk_manager
         public int DiskNumber { get { return this.disk_number; } }
         public int DiskCount { get { return this.disk_count; } }
 
-        public DiskImageSize DiskImageSize {get;set;}
+        public DiskImageSize DiskImageSize { get; set; }
 
 
 
@@ -278,38 +279,157 @@ namespace cpm_disk_manager
 
 
 
-        public bool ReadImageFile(String fileName)
+        public void cmd_chuser(String filename, int newuser)
         {
-            if (File.Exists(fileName))
+
+
+            disk.SetUser(filename, newuser);
+
+            foreach (FileEntry f in disk.GetFileEntries(filename))
             {
-                FileInfo fi = new FileInfo(fileName);
+                Buffer.BlockCopy(f.GetDataEntry(), 0, fileData, disk_start + f._entry, 32);
+            }
 
-                DiskImageSize = fi.Length > 65000000 ? DiskImageSize._128MB : DiskImageSize._64MB;
+            disk.LoadDisk(fileData, disk_start);
 
-                fileData = new byte[fi.Length];
+        }
 
-                using (BinaryReader b = new BinaryReader(
-                File.Open(fileName, FileMode.Open)))
+
+
+        public bool ReadImageFile(String fileName, ToolStripProgressBar progressBar = null)
+        {
+            try
+            {
+                if (File.Exists(fileName))
                 {
-                    // 2.
-                    // Position and length variables.
-                    int pos = 0;
-                    // 2A.
-                    // Use BaseStream.
-                    int length = (int)b.BaseStream.Length;
-                    while (pos < length)
+                    FileInfo fi = new FileInfo(fileName);
+
+                    DiskImageSize = fi.Length > 65000000 ? DiskImageSize._128MB : DiskImageSize._64MB;
+
+                    fileData = new byte[fi.Length];
+
+                    if (progressBar != null)
                     {
-
-                        fileData[pos] = b.ReadByte();
-                        // 3.
-                        // Read integer.
-                        //int v = b.ReadInt32();
-                        //Console.WriteLine(v);
-
-                        // 4.
-                        // Advance our position variable.
-                        pos += sizeof(byte);
+                        progressBar.Minimum = 0;
+                        progressBar.Maximum = (int)fi.Length;
+                        progressBar.Visible = true;
                     }
+
+
+                    using (BinaryReader b = new BinaryReader(
+                    File.Open(fileName, FileMode.Open)))
+                    {
+                        // 2.
+                        // Position and length variables.
+                        int pos = 0;
+                        // 2A.
+                        // Use BaseStream.
+                        int length = (int)b.BaseStream.Length;
+                        while (pos < length)
+                        {
+
+                            fileData[pos] = b.ReadByte();
+                            // 3.
+                            // Read integer.
+                            //int v = b.ReadInt32();
+                            //Console.WriteLine(v);
+
+                            // 4.
+                            // Advance our position variable.
+
+                            if (progressBar != null)
+                            {
+                                if (pos % 1000000 == 0)
+                                {
+                                    progressBar.Value = pos;
+                                    Application.DoEvents();
+                                }
+                            }
+
+                            pos += sizeof(byte);
+                        }
+                    }
+
+                    if (progressBar != null)
+                        progressBar.Visible = false;
+
+                    disk_count = (int)Math.Ceiling((decimal)fileData.Length / 0x800000);
+                    disk_start = disk_number * 0x800000;
+                    if (disk_start == 0) disk_start = 0x4000;
+
+                    this.UpdateDiskList();
+                    return true;
+                }
+            }
+            catch
+            {
+                MessageBox.Show("An error occurred while reading the image file.\nPlease check the file.", "Reading Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            if (progressBar != null)
+                progressBar.Visible = false;
+
+            return false;
+        }
+
+
+        public bool SaveImageFile(string fileName, ToolStripProgressBar progressBar = null)
+        {
+            try
+            {
+                if (progressBar != null)
+                {
+                    progressBar.Minimum = 0;
+                    progressBar.Maximum = (int)fileData.Length;
+                    progressBar.Visible = true;
+                }
+
+
+                using (BinaryWriter b = new BinaryWriter(File.Open(fileName, FileMode.Create)))
+                {
+                    for (int pos = 0; pos < fileData.Length; pos++)
+                    {
+                        b.Write(fileData[pos]);
+                        if (progressBar != null)
+                        {
+                            if (pos % 1000000 == 0)
+                            {
+                                progressBar.Value = pos;
+                                Application.DoEvents();
+                            }
+                        }
+                    }
+                }
+
+
+                if (progressBar != null)
+                    progressBar.Visible = false;
+
+                return true;
+
+            }
+            catch
+            {
+                MessageBox.Show("An error occurred while writing the image file.\nPlease check the file.", "Writing Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            if (progressBar != null)
+                progressBar.Visible = false;
+
+            return false;
+        }
+
+
+        public void ReadRawDisk(int selectedVol)
+        {
+            try
+            {
+                int clusters = DiskImageSize == DiskImageSize._64MB ? clusters_64mb : clusters_128mb;
+
+                using (RawDisk disk = new RawDisk(DiskNumberType.Volume, selectedVol, FileAccess.ReadWrite))
+                {
+                    fileData = new byte[512 * clusters];
+                    fileData = disk.ReadClusters(0, clusters);
                 }
 
                 disk_count = (int)Math.Ceiling((decimal)fileData.Length / 0x800000);
@@ -317,47 +437,26 @@ namespace cpm_disk_manager
                 if (disk_start == 0) disk_start = 0x4000;
 
                 this.UpdateDiskList();
-                return true;
+
             }
-            return false;
-        }
-
-
-        public bool SaveImageFile(string fileName)
-        {
-            using (BinaryWriter b = new BinaryWriter(File.Open(fileName, FileMode.Create)))
+            catch
             {
-                for (int i = 0; i < fileData.Length; i++)
-                    b.Write(fileData[i]);
+                MessageBox.Show("An error occurred while reading disk.", "Reading Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-            return true;
-        }
-
-
-        public void ReadRawDisk(int selectedVol)
-        {
-            int clusters = DiskImageSize == DiskImageSize._64MB ? clusters_64mb : clusters_128mb;
-
-            using (RawDisk disk = new RawDisk(DiskNumberType.Volume, selectedVol, FileAccess.ReadWrite))
-            {
-                fileData = new byte[512 * clusters];
-                fileData = disk.ReadClusters(0, clusters);
-            }
-
-            disk_count = (int)Math.Ceiling((decimal)fileData.Length / 0x800000);
-            disk_start = disk_number * 0x800000;
-            if (disk_start == 0) disk_start = 0x4000;
-
-            this.UpdateDiskList();
         }
 
         public void WriteRawDisk(int selectedVol)
         {
-            using (RawDisk disk = new RawDisk(DiskNumberType.Volume, selectedVol, FileAccess.ReadWrite))
+            try
             {
-                disk.WriteClusters(fileData, 0);
-
+                using (RawDisk disk = new RawDisk(DiskNumberType.Volume, selectedVol, FileAccess.ReadWrite))
+                {
+                    disk.WriteClusters(fileData, 0);
+                }
+            }
+            catch
+            {
+                MessageBox.Show("An error occurred while writing the disk.", "Writing Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
