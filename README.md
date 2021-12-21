@@ -1,10 +1,12 @@
 # CP/M Disk Manager for CP/M on breadboard by Grant Searle (http://searle.x10host.com/cpm/index.html)
 
-This is a disk manager for CP/M disk format using a 64MB Compact Flash proposed by Grant Searle.
+This is a disk manager for CP/M disk format using a 64MB/128MB Compact Flash proposed by Grant Searle.
 
 The emulator software is available at https://github.com/abaffa/z80cpm_emulator.
 
 File data.dsk is an example of disk image.
+
+To read the CFCard/SDCard it's necessary to run as administrator to have disk raw access priviledges. 
 
 ![cpm_dm1](_images/cpm_dm1.png)
 
