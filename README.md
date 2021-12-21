@@ -1,4 +1,7 @@
-# CP/M Disk Manager for CP/M on breadboard by Grant Searle (http://searle.x10host.com/cpm/index.html)
+# CP/M Disk Manager
+ 
+ Compatible with CP/M on breadboard by Grant Searle (http://searle.x10host.com/cpm/index.html)
+ and RC2014 by Steve Cousins (https://rc2014.co.uk/)
 
 This is a disk manager for CP/M disk format using a 64MB/128MB Compact Flash proposed by Grant Searle.
 
