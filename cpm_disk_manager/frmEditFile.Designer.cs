@@ -44,6 +44,8 @@
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.textBox2 = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
+            this.sendToClipboardDOWNLOADCOMToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             this.statusStrip1.SuspendLayout();
@@ -68,6 +70,8 @@
             // editorToolStripMenuItem
             // 
             this.editorToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.sendToClipboardDOWNLOADCOMToolStripMenuItem,
+            this.toolStripMenuItem1,
             this.closeToolStripMenuItem});
             this.editorToolStripMenuItem.Name = "editorToolStripMenuItem";
             this.editorToolStripMenuItem.Size = new System.Drawing.Size(50, 23);
@@ -76,7 +80,7 @@
             // closeToolStripMenuItem
             // 
             this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
-            this.closeToolStripMenuItem.Size = new System.Drawing.Size(103, 22);
+            this.closeToolStripMenuItem.Size = new System.Drawing.Size(279, 22);
             this.closeToolStripMenuItem.Text = "Close";
             this.closeToolStripMenuItem.Click += new System.EventHandler(this.closeToolStripMenuItem_Click);
             // 
@@ -216,6 +220,18 @@
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.label1.Visible = false;
             // 
+            // sendToClipboardDOWNLOADCOMToolStripMenuItem
+            // 
+            this.sendToClipboardDOWNLOADCOMToolStripMenuItem.Name = "sendToClipboardDOWNLOADCOMToolStripMenuItem";
+            this.sendToClipboardDOWNLOADCOMToolStripMenuItem.Size = new System.Drawing.Size(320, 22);
+            this.sendToClipboardDOWNLOADCOMToolStripMenuItem.Text = "Send to Clipboard (DOWNLOAD.COM Format)";
+            this.sendToClipboardDOWNLOADCOMToolStripMenuItem.Click += new System.EventHandler(this.sendToClipboardDOWNLOADCOMToolStripMenuItem_Click);
+            // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(276, 6);
+            // 
             // frmEditFile
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -270,5 +286,7 @@
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.TextBox textBox2;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.ToolStripMenuItem sendToClipboardDOWNLOADCOMToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
     }
 }

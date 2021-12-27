@@ -83,7 +83,7 @@ namespace cpm_disk_manager
 
         public static string stringByteToText(String bytetext)
         {
-            Byte[] filearray = StringToByteArray(bytetext);
+            Byte[] filearray = HexStringToByteArray(bytetext);
 
             string file = "";
             foreach (Byte b in filearray)
@@ -108,7 +108,7 @@ namespace cpm_disk_manager
             return file;
         }
 
-        public static byte[] StringToByteArray(String hex)
+        public static byte[] HexStringToByteArray(String hex)
         {
             int NumberChars = hex.Length;
             byte[] bytes = new byte[NumberChars / 2];
@@ -128,7 +128,7 @@ namespace cpm_disk_manager
         }
 
 
-        public static String ByteArrayToString(byte[] data)
+        public static String ByteArrayToHexString(byte[] data)
         {
             string file = "";
             int index = 0;
@@ -179,6 +179,17 @@ namespace cpm_disk_manager
 
         }
 
+        public static string CalculateChecksum(byte[] bytes)
+        {
+            int sum = 0;
+            int byte_count = 0;
+            foreach (byte c in bytes)
+            {
+                sum += (int)c;
+                byte_count++;
+            }
 
+            return (byte_count & 0b11111111).ToString("X2") + (sum & 0b11111111).ToString("X2");
+        }
     }
 }

@@ -22,6 +22,7 @@ namespace cpm_disk_manager
         String filename = "";
         String hexadecimal_data = "";
         String ascii_data = "";
+        String checksum = "";
 
         int _org = 0;
 
@@ -92,7 +93,7 @@ namespace cpm_disk_manager
         private void load_data()
         {
             ascii_data = System.Text.Encoding.Default.GetString(current_data);
-            hexadecimal_data = Utils.ByteArrayToString(current_data);
+            hexadecimal_data = Utils.ByteArrayToHexString(current_data);
 
             undoToolStripMenuItem.Enabled = !Utils.CompareByteArrays(original_data, current_data);
         }
@@ -101,7 +102,7 @@ namespace cpm_disk_manager
         {
             current_data = original_data;
             ascii_data = System.Text.Encoding.Default.GetString(current_data);
-            hexadecimal_data = Utils.ByteArrayToString(current_data);
+            hexadecimal_data = Utils.ByteArrayToHexString(current_data);
         }
 
         //Regex.Replace(textBox1.Text, "[^a-fA-F0-9]+", "", RegexOptions.Compiled)
@@ -257,7 +258,8 @@ namespace cpm_disk_manager
                 byte_count++;
             }
 
-            toolStripStatusLabel1.Text = "Checksum: " + (byte_count & 0b11111111).ToString("X2") + (sum & 0b11111111).ToString("X2");
+            checksum = (byte_count & 0b11111111).ToString("X2") + (sum & 0b11111111).ToString("X2");
+            toolStripStatusLabel1.Text = "Checksum: " + checksum;
         }
 
 
@@ -311,8 +313,9 @@ namespace cpm_disk_manager
         {
             try
             {
-                Byte[] filearray = Utils.StringToByteArray(textBox1.Text);
+                Byte[] filearray = Utils.HexStringToByteArray(textBox1.Text);
                 saveFileDialog1.FileName = filename;
+                saveFileDialog1.Filter = "All Files (*.*)|*.*";
                 if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
                 {
                     string filename = saveFileDialog1.FileName;
@@ -371,7 +374,7 @@ namespace cpm_disk_manager
             if (_filetype == EditorType.Binary)
             {
                 entry = Regex.Replace(entry, "[^a-fA-F0-9]+", "", RegexOptions.Compiled);
-                current_data = Utils.StringToByteArray(entry);
+                current_data = Utils.HexStringToByteArray(entry);
             }
             else
             {
@@ -391,6 +394,17 @@ namespace cpm_disk_manager
             /// verificar undo
             update_entry();
             load_data();
+        }
+
+        private void sendToClipboardDOWNLOADCOMToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            String clipboard = "";
+            clipboard += "A:DOWNLOAD " + filename + "\r\n";
+            clipboard += "U0\r\n";
+            clipboard += ":" + hexadecimal_data;
+            clipboard += ">" + checksum  + "\r\n";
+
+            Clipboard.SetText(clipboard);
         }
     }
 }

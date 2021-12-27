@@ -560,6 +560,7 @@ namespace cpm_disk_manager
             openFileDialog1.AddExtension = true;
             openFileDialog1.DefaultExt = "dsk";
             openFileDialog1.CheckFileExists = true;
+            openFileDialog1.Multiselect = false;
             openFileDialog1.Filter = "Disk Images (*.dsk, *.img)|*.dsk; *.img|All Files (*.*)|*.*";
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
@@ -586,8 +587,8 @@ namespace cpm_disk_manager
             {
                 if (MessageBox.Show("Save file?", "Confirm save", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
-                    
-                    if(saveImageFile(current_filename))
+
+                    if (saveImageFile(current_filename))
                         this.Text = "CP/M Disk Manager " + current_filename;
                     else
                     {
@@ -824,7 +825,7 @@ namespace cpm_disk_manager
             saveFileDialog1.FileName = current_filename;
             saveFileDialog1.AddExtension = true;
             saveFileDialog1.DefaultExt = "dsk";
-            saveFileDialog1.CheckFileExists = true;
+            saveFileDialog1.CheckFileExists = false;
             saveFileDialog1.Filter = "Disk Images (*.dsk, *.img)|*.dsk; *.img|All Files (*.*)|*.*";
 
             if (saveFileDialog1.ShowDialog() == DialogResult.OK)
@@ -960,14 +961,14 @@ namespace cpm_disk_manager
 
         private void newImageToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            
+
 
             selectedVol = -1;
             diskImage.NewImage();
             cmd_ls();
 
 
-            if(diskImage.DiskImageSize == DiskImageSize._128MB)
+            if (diskImage.DiskImageSize == DiskImageSize._128MB)
                 this.Text = "CP/M Disk Manager (New 128MB image)";
             else
                 this.Text = "CP/M Disk Manager (New 64MB image)";
@@ -1132,9 +1133,6 @@ namespace cpm_disk_manager
 
         public void PresentResult(RawDisk disk)
         {
-
-
-
             byte[] data = disk.ReadClusters(0, (int)Math.Min(disk.ClusterCount, ClustersToRead));
 
             string fatType = Encoding.ASCII.GetString(data, 82, 8);     // Extended FAT parameters have a display name here.
@@ -1155,43 +1153,6 @@ namespace cpm_disk_manager
             Console.WriteLine("All bytes zero: {0}", allZero);
         }
 
-        private void exportToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (listView1.SelectedItems.Count == 1)
-            {
-                byte[] data = diskImage.Disk.GetFile((string)listView1.SelectedItems[0].Tag);
-
-                String filename = listView1.SelectedItems[0].Text;
-
-                saveFileDialog1.FileName = filename;
-                if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
-                {
-                    filename = saveFileDialog1.FileName;
-
-                    File.WriteAllBytes(filename, data);
-                    //MessageBox.Show("FileS, "Save Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                }
-            }
-            else if (listView1.SelectedItems.Count > 1)
-            {
-
-
-                if (folderBrowserDialog1.ShowDialog(this) == DialogResult.OK)
-                {
-
-                    foreach (ListViewItem lvi in listView1.SelectedItems)
-                    {
-                        byte[] data = diskImage.Disk.GetFile((string)lvi.Tag);
-
-                        String filename = lvi.Text;
-
-                        File.WriteAllBytes(folderBrowserDialog1.SelectedPath + "\\" + filename, data);
-                        //MessageBox.Show("FileS, "Save Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
-        }
 
         private void mBToolStripMenuItem1_Click(object sender, EventArgs e)
         {
@@ -1315,6 +1276,162 @@ namespace cpm_disk_manager
                 diskImage.cmd_rename(item.Tag.ToString(), filename);
             }
             cmd_ls();
+        }
+
+        private void filesToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if (listView1.SelectedItems.Count == 1)
+            {
+                byte[] data = diskImage.Disk.GetFile((string)listView1.SelectedItems[0].Tag);
+
+                String filename = listView1.SelectedItems[0].Text;
+
+                saveFileDialog1.FileName = filename;
+                if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
+                {
+                    filename = saveFileDialog1.FileName;
+
+                    File.WriteAllBytes(filename, data);
+                    //MessageBox.Show("FileS, "Save Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                }
+            }
+            else if (listView1.SelectedItems.Count > 1)
+            {
+
+
+                if (folderBrowserDialog1.ShowDialog(this) == DialogResult.OK)
+                {
+
+                    foreach (ListViewItem lvi in listView1.SelectedItems)
+                    {
+                        byte[] data = diskImage.Disk.GetFile((string)lvi.Tag);
+
+                        String filename = lvi.Text;
+
+                        File.WriteAllBytes(folderBrowserDialog1.SelectedPath + "\\" + filename, data);
+                        //MessageBox.Show("FileS, "Save Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void filesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            openFileDialog1.FileName = "";
+            openFileDialog1.AddExtension = true;
+            openFileDialog1.DefaultExt = "*.*";
+            openFileDialog1.CheckFileExists = true;
+            openFileDialog1.Multiselect = true;
+            openFileDialog1.Filter = "All Files (*.*)|*.*";
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                bool newfile = false;
+                string[] files = openFileDialog1.FileNames;
+                foreach (string file in files)
+                {
+                    if (File.Exists(file))
+                    {
+                        using (BinaryReader b = new BinaryReader(File.Open(file, FileMode.Open)))
+                        {
+                            string filename = Path.GetFileName(file);
+                            Byte[] data = Utils.ReadAllBytes(b);
+                            cmd_mkbin(filename, data);
+
+                        }
+                        newfile = true;
+                    }
+
+                }
+                if (newfile)
+                    cmd_ls();
+
+            }
+        }
+
+        private void pKGToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            saveFileDialog1.FileName = "";
+            saveFileDialog1.AddExtension = true;
+            saveFileDialog1.DefaultExt = "pkg";
+            saveFileDialog1.CheckFileExists = false;
+            saveFileDialog1.Filter = "Package File (*.pkg)|*.pkg|All Files (*.*)|*.*";
+
+            if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                string pkgfilename = saveFileDialog1.FileName;
+
+
+                if (File.Exists(pkgfilename))
+                    File.Delete(pkgfilename);
+
+                using (TextWriter text_writer = File.CreateText(pkgfilename))
+                {
+                    foreach (ListViewItem lvi in listView1.SelectedItems)
+                    {
+                        byte[] data = diskImage.Disk.GetFile((string)lvi.Tag);
+
+                        string filename = lvi.Text;
+                        string hexdata = Utils.ByteArrayToHexString(data);
+                        string checksum = Utils.CalculateChecksum(data);
+
+                        string pkgdata = "";
+                        pkgdata += "A:DOWNLOAD " + filename + "\r\n";
+                        pkgdata += "U0\r\n";
+                        pkgdata += ":" + hexdata + ">" + checksum + "\r\n";
+                        text_writer.Write(pkgdata);
+                    }
+                }
+            }
+        }
+
+        private void pKGToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            openFileDialog1.FileName = "";
+            openFileDialog1.AddExtension = true;
+            openFileDialog1.DefaultExt = "*.pkg";
+            openFileDialog1.CheckFileExists = true;
+            openFileDialog1.Multiselect = false;
+            openFileDialog1.Filter = "Package File (*.pkg)|*.pkg|All Files (*.*)|*.*";
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                String[] lines = File.ReadAllLines(openFileDialog1.FileName);
+                bool newfile = false;
+                int i = 0;
+
+                string current_filename = "";
+                int user = 0;
+
+                while (i < lines.Length)
+                {
+                    if (lines[i].IndexOf(":DOWNLOAD ") > 0)
+                        current_filename = lines[i].Substring(11);
+
+                    if (lines[i].IndexOf("U") == 0)
+                    {
+                        int.TryParse(lines[i].Substring(1), out user);
+                    }
+
+
+                    if (current_filename != "" && lines[i].IndexOf(":") == 0 && lines[i].IndexOf(">") > 0)
+                    {
+                        string hexdata = lines[i].Substring(1, lines[i].IndexOf(">") - 1);
+                        string checksum = lines[i].Substring(lines[i].IndexOf(">") + 1);
+                        byte[] data = Utils.HexStringToByteArray(hexdata);
+
+                        if (checksum == Utils.CalculateChecksum(data) )
+                        {
+                            cmd_mkbin(current_filename, data);
+                        }
+                        current_filename = "";
+                        user = 0;
+                    }
+
+                    i++;
+                }
+                if (newfile)
+                    cmd_ls();
+            }
         }
     }
 }
