@@ -49,6 +49,7 @@
             this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.filesToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.pKGToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
             this.userToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripComboBox1 = new System.Windows.Forms.ToolStripComboBox();
             this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -99,7 +100,6 @@
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
-            this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
             this.contextMenuStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -240,14 +240,14 @@
             // filesToolStripMenuItem
             // 
             this.filesToolStripMenuItem.Name = "filesToolStripMenuItem";
-            this.filesToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.filesToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
             this.filesToolStripMenuItem.Text = "File(s)";
             this.filesToolStripMenuItem.Click += new System.EventHandler(this.filesToolStripMenuItem_Click);
             // 
             // pKGToolStripMenuItem
             // 
             this.pKGToolStripMenuItem.Name = "pKGToolStripMenuItem";
-            this.pKGToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.pKGToolStripMenuItem.Size = new System.Drawing.Size(105, 22);
             this.pKGToolStripMenuItem.Text = ".PKG";
             this.pKGToolStripMenuItem.Click += new System.EventHandler(this.pKGToolStripMenuItem_Click);
             // 
@@ -273,6 +273,11 @@
             this.pKGToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
             this.pKGToolStripMenuItem1.Text = ".PKG";
             this.pKGToolStripMenuItem1.Click += new System.EventHandler(this.pKGToolStripMenuItem1_Click);
+            // 
+            // toolStripMenuItem7
+            // 
+            this.toolStripMenuItem7.Name = "toolStripMenuItem7";
+            this.toolStripMenuItem7.Size = new System.Drawing.Size(177, 6);
             // 
             // userToolStripMenuItem
             // 
@@ -668,11 +673,6 @@
             // openFileDialog1
             // 
             this.openFileDialog1.FileName = "openFileDialog1";
-            // 
-            // toolStripMenuItem7
-            // 
-            this.toolStripMenuItem7.Name = "toolStripMenuItem7";
-            this.toolStripMenuItem7.Size = new System.Drawing.Size(177, 6);
             // 
             // frmMain
             // 

@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Security.Principal;
+using System.Globalization;
 
 namespace cpm_disk_manager
 {
@@ -37,6 +38,9 @@ namespace cpm_disk_manager
 
         public frmMain()
         {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+
             InitializeComponent();
 
             contextMenuStrip1_Opening(null, null);
@@ -300,7 +304,23 @@ namespace cpm_disk_manager
             {
                 copyToolStripMenuItem_Click(null, null);
             }
+            else if (e.Modifiers == Keys.Control && e.KeyCode == Keys.C && listView1.Items.Count > 0)
+            {
+                String clipboard = "";
+                foreach (ListViewItem lvi in listView1.Items)
+                {
 
+                    clipboard += lvi.Text.PadRight(15);
+                    clipboard += "U" + lvi.SubItems[1].Text.PadRight(5);
+                    clipboard += lvi.SubItems[2].Text;
+                    clipboard += "\r\n";
+                }
+                try
+                {
+                    Clipboard.SetText(clipboard);
+                }
+                catch { }
+            }
             else if (e.Modifiers == Keys.Control && e.KeyCode == Keys.V && clipboard.Count > 0)
             {
                 pasteToolStripMenuItem_Click(null, null);
@@ -350,7 +370,7 @@ namespace cpm_disk_manager
             editToolStripMenuItem.Enabled = listView1.SelectedItems.Count == 1;
             renameToolStripMenuItem.Enabled = listView1.SelectedItems.Count == 1;
             deleteToolStripMenuItem.Enabled = listView1.SelectedItems.Count != 0;
-            exportToolStripMenuItem.Enabled = listView1.SelectedItems.Count != 0;
+            exportToolStripMenuItem.Enabled = listView1.Items.Count != 0;
 
             copyToolStripMenuItem.Enabled = listView1.SelectedItems.Count != 0;
             userToolStripMenuItem.Enabled = listView1.SelectedItems.Count != 0;
@@ -1296,14 +1316,30 @@ namespace cpm_disk_manager
 
                 }
             }
-            else if (listView1.SelectedItems.Count > 1)
+            else
             {
 
 
                 if (folderBrowserDialog1.ShowDialog(this) == DialogResult.OK)
                 {
 
-                    foreach (ListViewItem lvi in listView1.SelectedItems)
+                    List<ListViewItem> col = new List<ListViewItem>();
+                    if (listView1.SelectedItems.Count > 0)
+                    {
+                        foreach (ListViewItem lvi in listView1.SelectedItems)
+                        {
+                            col.Add(lvi);
+                        }
+                    }
+                    else
+                    {
+                        foreach (ListViewItem lvi in listView1.Items)
+                        {
+                            col.Add(lvi);
+                        }
+                    }
+
+                    foreach (ListViewItem lvi in col)
                     {
                         byte[] data = diskImage.Disk.GetFile((string)lvi.Tag);
 
@@ -1367,7 +1403,24 @@ namespace cpm_disk_manager
 
                 using (TextWriter text_writer = File.CreateText(pkgfilename))
                 {
-                    foreach (ListViewItem lvi in listView1.SelectedItems)
+
+                    List<ListViewItem> col = new List<ListViewItem>();
+                    if (listView1.SelectedItems.Count > 0)
+                    {
+                        foreach (ListViewItem lvi in listView1.SelectedItems)
+                        {
+                            col.Add(lvi);
+                        }
+                    }
+                    else
+                    {
+                        foreach (ListViewItem lvi in listView1.Items)
+                        {
+                            col.Add(lvi);
+                        }
+                    }
+
+                    foreach (ListViewItem lvi in col)
                     {
                         byte[] data = diskImage.Disk.GetFile((string)lvi.Tag);
 
@@ -1419,7 +1472,7 @@ namespace cpm_disk_manager
                         string checksum = lines[i].Substring(lines[i].IndexOf(">") + 1);
                         byte[] data = Utils.HexStringToByteArray(hexdata);
 
-                        if (checksum == Utils.CalculateChecksum(data) )
+                        if (checksum == Utils.CalculateChecksum(data))
                         {
                             cmd_mkbin(current_filename, data);
                         }
