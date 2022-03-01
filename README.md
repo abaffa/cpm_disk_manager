@@ -1,11 +1,11 @@
-# CP/M Disk Manager
+# CP/M Disk Manager [![Hackaday.io](https://img.shields.io/badge/Hackaday.io--blue.svg)](https://hackaday.io/project/184235-60x25-minimal-terminal)
  
  Compatible with CP/M on breadboard by Grant Searle (http://searle.x10host.com/cpm/index.html)
  and RC2014 by Spencer Owen (https://rc2014.co.uk/)
 
 This is a disk manager for CP/M disk format using a 64MB/128MB Compact Flash proposed by Grant Searle.
 
-The emulator software is available at https://github.com/abaffa/z80cpm_emulator.
+The emulator software is available at https://github.com/abaffa/z80cpm_emulator and was the landmark for [Baffa-2 Homebrew Microcomputer Project](https://baffa-2.baffasoft.com.br)
 
 File data.dsk is an example of disk image.
 
