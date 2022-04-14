@@ -115,10 +115,20 @@ namespace cpm_disk_manager
             }
             catch { }
 
-            if (diskimagesize == 128)
-                mBToolStripMenuItem1_Click(this, null);
-            else
-                mBToolStripMenuItem_Click(this, null);
+
+            switch (diskimagesize)
+            {
+                case 68:
+                    romWBWToolStripMenuItem_Click(this, null);
+                    break;                    
+                case 128:
+                    mBToolStripMenuItem1_Click(this, null);
+                    break;
+                default:
+                    mBToolStripMenuItem_Click(this, null);
+                    break;
+            }
+                
         }
 
 
@@ -560,12 +570,15 @@ namespace cpm_disk_manager
             if (diskImage.ReadImageFile(fileName, toolStripProgressBar1))
             {
 
-                if (diskImage.DiskImageSize == DiskImageSize._128MB)
+                if (diskImage.DiskImageFormat == DiskImageFormat._128MB_Searle)
                     mBToolStripMenuItem1_Click(this, null);
+                else if (diskImage.DiskImageFormat == DiskImageFormat.__ROMWBW)
+                    romWBWToolStripMenuItem_Click(this, null);  
                 else
                     mBToolStripMenuItem_Click(this, null);
 
-                selectedVol = -1;
+
+                    selectedVol = -1;
                 current_filename = fileName;
 
                 update_disk_list();
@@ -598,6 +611,7 @@ namespace cpm_disk_manager
                     current_filename = "";
                     this.Text = "CP/M Disk Manager (No File)";
                 }
+
             }
         }
 
@@ -984,11 +998,13 @@ namespace cpm_disk_manager
 
 
             selectedVol = -1;
-            diskImage.NewImage();
+            diskImage.NewImage(diskImage.DiskImageFormat);
             cmd_ls();
 
 
-            if (diskImage.DiskImageSize == DiskImageSize._128MB)
+            if (diskImage.DiskImageFormat == DiskImageFormat.__ROMWBW)
+                this.Text = "CP/M Disk Manager (New ROMWBW image)";
+            else if (diskImage.DiskImageFormat == DiskImageFormat._128MB_Searle)
                 this.Text = "CP/M Disk Manager (New 128MB image)";
             else
                 this.Text = "CP/M Disk Manager (New 64MB image)";
@@ -1178,7 +1194,8 @@ namespace cpm_disk_manager
         {
             mBToolStripMenuItem1.Checked = true;
             mBToolStripMenuItem.Checked = false;
-            diskImage.DiskImageSize = DiskImageSize._128MB;
+            romWBWToolStripMenuItem.Checked = false;
+            diskImage.DiskImageFormat = DiskImageFormat._128MB_Searle;
 
             newImageToolStripMenuItem.Text = "New Image(128MB)";
 
@@ -1190,12 +1207,26 @@ namespace cpm_disk_manager
         {
             mBToolStripMenuItem1.Checked = false;
             mBToolStripMenuItem.Checked = true;
-            diskImage.DiskImageSize = DiskImageSize._64MB;
+            romWBWToolStripMenuItem.Checked = false;
+            diskImage.DiskImageFormat = DiskImageFormat._64MB_Searle;
 
             newImageToolStripMenuItem.Text = "New Image(64MB)";
 
             IniFile ini = new IniFile(System.Environment.CurrentDirectory + "\\" + "config.ini");
             ini.IniWriteValue("general", "disk_image_size", "64");
+        }
+
+        private void romWBWToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            mBToolStripMenuItem1.Checked = false;
+            mBToolStripMenuItem.Checked = false;
+            romWBWToolStripMenuItem.Checked = true;
+            diskImage.DiskImageFormat = DiskImageFormat.__ROMWBW;
+
+            newImageToolStripMenuItem.Text = "New Image(ROMWBW)";
+
+            IniFile ini = new IniFile(System.Environment.CurrentDirectory + "\\" + "config.ini");
+            ini.IniWriteValue("general", "disk_image_size", "68");
         }
 
         private void toolStripComboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -1486,6 +1517,8 @@ namespace cpm_disk_manager
                     cmd_ls();
             }
         }
+
+        
     }
 }
 

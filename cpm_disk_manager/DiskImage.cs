@@ -9,21 +9,21 @@ using System.Windows.Forms;
 
 namespace cpm_disk_manager
 {
-    public enum DiskImageSize
+    public enum DiskImageFormat
     {
-        _64MB,
-        _128MB
+        _64MB_Searle,
+        _128MB_Searle,
+        __ROMWBW
     }
     public class DiskImage
     {
         //const int CF_CARD_LBA_SIZE = 0x800;         // temporary small size
 
-        //const int DISK_SIZE = 0x800000;
 
         Byte[] fileData;
 
 
-        Disk disk = new Disk();
+        Disk disk;
         List<FileEntry> fileEntryList = new List<FileEntry>();
         int disk_start = 0;
         int disk_number = 0;
@@ -34,37 +34,105 @@ namespace cpm_disk_manager
         public int DiskNumber { get { return this.disk_number; } }
         public int DiskCount { get { return this.disk_count; } }
 
-        public DiskImageSize DiskImageSize { get; set; }
+        public DiskImageFormat DiskImageFormat { get; set; }
+
+        int clusters_4mb = 0x2000;       //   4MB Image
+        int clusters_64mb = 0x20000;    //  64MB Image
+        int clusters_68mb = 0x20900;    //  68MB Image      //68288512 bytes
+        int clusters_128mb = 0x40000;   // 128MB Image
 
 
-
-        int clusters_4mb = 0x2000; // 4 MB image
-        int clusters_64mb = 0x1E848; //64MB Image
-        int clusters_128mb = 0x3D090; //128MB Image
+        int default_disksize = 0x800000;
+        int default_firstdisksize = 0x800000;
+        int default_lastdisksize = 0x800000;
+        int default_firstdiskstart = 0x4000;
 
         public DiskImage()
         {
-            DiskImageSize = DiskImageSize._64MB;
+            DiskImageFormat = DiskImageFormat._64MB_Searle;
         }
 
-        public DiskImage(DiskImageSize _imageSize)
+        public DiskImage(DiskImageFormat _imageSize)
         {
-            DiskImageSize = _imageSize;
+            DiskImageFormat = _imageSize;
         }
 
-        public void NewImage()
+
+        private int UpdateCurrentDiskStart()
         {
-            int clusters = DiskImageSize == DiskImageSize._64MB ? clusters_64mb : clusters_128mb;
+
+            disk_count = (int)Math.Floor((decimal)fileData.Length / default_disksize);
+
+            int current_disksize = default_disksize;
+
+            if (disk_count == 0)
+            {
+                disk_start = default_firstdiskstart;
+                current_disksize = default_firstdisksize;
+            }
+            else if (disk_number == disk_count - 1)
+            {
+                if(DiskImageFormat == DiskImageFormat.__ROMWBW)
+                    disk_start = default_firstdiskstart + (disk_number * current_disksize);
+                else
+                    disk_start = (disk_number * current_disksize);
+                current_disksize = default_lastdisksize;
+            }
+            else
+            {
+                if (DiskImageFormat == DiskImageFormat.__ROMWBW)
+                    disk_start = default_firstdiskstart + (disk_number * current_disksize);
+                else
+                    disk_start = (disk_number * current_disksize);
+                current_disksize = default_disksize;
+            }
+
+                
+
+            return current_disksize;
+        }
+
+
+        public void SetFormat(DiskImageFormat _diskImageSize)
+        {
+            int clusters = clusters_4mb;
+            disk = new Disk(_diskImageSize);
+
+            DiskImageFormat = _diskImageSize;
+
+            if (DiskImageFormat == DiskImageFormat._64MB_Searle)
+            {
+                clusters = clusters_64mb;
+                default_disksize = 0x800000;
+                default_firstdiskstart = 0x4000;
+                default_firstdisksize = default_disksize - default_firstdiskstart;
+                default_lastdisksize = default_disksize;
+            }
+            else if (DiskImageFormat == DiskImageFormat.__ROMWBW)
+            {
+                clusters = clusters_68mb;
+                default_disksize = 0x820000; //0x800000;
+                default_firstdiskstart = 0x20000; //0x4000;
+
+                default_firstdisksize = default_disksize;
+                default_lastdisksize = default_disksize;
+            }
+            else if (DiskImageFormat == DiskImageFormat._128MB_Searle)
+            {
+                clusters = clusters_128mb;
+                default_disksize = 0x800000;
+                default_firstdiskstart = 0x4000;
+
+                default_firstdisksize = default_disksize - default_firstdiskstart;
+                default_lastdisksize = default_disksize;
+            }
 
             fileData = new byte[512 * clusters];
-            disk = new Disk();
-
 
             disk_number = 0;
 
-            disk_start = disk_number * 0x800000;
-            disk_count = (int)Math.Ceiling((decimal)fileData.Length / 0x800000);
-            if (disk_start == 0) disk_start = 0x4000;
+            UpdateCurrentDiskStart();
+
 
             createEmptyFileEntries();
 
@@ -72,14 +140,19 @@ namespace cpm_disk_manager
         }
 
 
+        public void NewImage(DiskImageFormat _diskImageSize)
+        {
+            SetFormat(_diskImageSize);
+        }
+
 
         private void createEmptyFileEntries()
         {
             for (int disk_number = 0; disk_number < disk_count; disk_number++)
             {
-                int disk_start = disk_number * 0x800000;
-                if (disk_start == 0) disk_start = 0x4000;
-                for (int file_entry = disk_start; file_entry < disk_start + 0x4000; file_entry += 0x20)
+                UpdateCurrentDiskStart();
+
+                for (int file_entry = disk_start; file_entry < disk_start + default_firstdiskstart; file_entry += 0x20)
                 {
                     fileData[file_entry] = 0xe5; //empty entry
 
@@ -108,8 +181,7 @@ namespace cpm_disk_manager
 
         public void UpdateDiskList()
         {
-            disk_start = disk_number * 0x800000;
-            if (disk_start == 0) disk_start = 0x4000;
+            UpdateCurrentDiskStart();
             disk.LoadDisk(fileData, disk_start);
         }
 
@@ -281,8 +353,6 @@ namespace cpm_disk_manager
 
         public void cmd_chuser(String filename, int newuser)
         {
-
-
             disk.SetUser(filename, newuser);
 
             foreach (FileEntry f in disk.GetFileEntries(filename))
@@ -302,11 +372,20 @@ namespace cpm_disk_manager
             {
                 if (File.Exists(fileName))
                 {
+
                     FileInfo fi = new FileInfo(fileName);
 
-                    DiskImageSize = fi.Length > 65000000 ? DiskImageSize._128MB : DiskImageSize._64MB;
+                    DiskImageFormat =
+                        (
+                        fi.Length >= 100000000 ? DiskImageFormat._128MB_Searle :
+                        (fi.Length >= 68000000 ? DiskImageFormat.__ROMWBW : DiskImageFormat._64MB_Searle)
+                        );
 
-                    fileData = new byte[fi.Length];
+                    SetFormat(DiskImageFormat);
+                    disk = new Disk(DiskImageFormat);
+
+
+                    //fileData = new byte[fi.Length];
 
                     if (progressBar != null)
                     {
@@ -325,7 +404,7 @@ namespace cpm_disk_manager
                         // 2A.
                         // Use BaseStream.
                         int length = (int)b.BaseStream.Length;
-                        while (pos < length)
+                        while (pos < length && pos < fileData.Length)
                         {
 
                             fileData[pos] = b.ReadByte();
@@ -353,15 +432,13 @@ namespace cpm_disk_manager
                     if (progressBar != null)
                         progressBar.Visible = false;
 
-                    disk_count = (int)Math.Ceiling((decimal)fileData.Length / 0x800000);
-                    disk_start = disk_number * 0x800000;
-                    if (disk_start == 0) disk_start = 0x4000;
+                    UpdateCurrentDiskStart();
 
                     this.UpdateDiskList();
                     return true;
                 }
             }
-            catch
+            catch (Exception Ex)
             {
                 MessageBox.Show("An error occurred while reading the image file.\nPlease check the file.", "Reading Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
@@ -424,7 +501,9 @@ namespace cpm_disk_manager
         {
             try
             {
-                int clusters = DiskImageSize == DiskImageSize._64MB ? clusters_64mb : clusters_128mb;
+                int clusters = DiskImageFormat == DiskImageFormat._128MB_Searle ? clusters_128mb :
+                    (DiskImageFormat == DiskImageFormat.__ROMWBW ? clusters_68mb : clusters_64mb);
+
 
                 using (RawDisk disk = new RawDisk(DiskNumberType.Volume, selectedVol, FileAccess.ReadWrite))
                 {
@@ -432,9 +511,7 @@ namespace cpm_disk_manager
                     fileData = disk.ReadClusters(0, clusters);
                 }
 
-                disk_count = (int)Math.Ceiling((decimal)fileData.Length / 0x800000);
-                disk_start = disk_number * 0x800000;
-                if (disk_start == 0) disk_start = 0x4000;
+                UpdateCurrentDiskStart();
 
                 this.UpdateDiskList();
 

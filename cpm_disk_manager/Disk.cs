@@ -8,6 +8,7 @@ namespace cpm_disk_manager
 {
     public class Disk
     {
+        int default_firstdiskstart = 0x4000;
 
         public int spt { get; set; }    //DEFW  spt; Number of 128-byte records per track
 
@@ -15,6 +16,8 @@ namespace cpm_disk_manager
         public int blm { get; set; }    //DEFB  blm; Block mask. 7 => 1k, 0Fh => 2k, 1Fh => 4k...
         public int exm { get; set; }    //DEFB  exm; Extent mask, see later
         public int dsm { get; set; }    //DEFW  dsm; (no.of blocks on the disc)-1
+        public int first_dsm { get; set; }
+        public int last_dsm { get; set; }
 
         public int drw { get; set; }    //DEFW  drm; (no.of directory entries)-1
 
@@ -37,28 +40,69 @@ namespace cpm_disk_manager
         List<FileEntry> FAT = new List<FileEntry>();
         Dictionary<string, List<FileEntry>> file_entries = new Dictionary<string, List<FileEntry>>();
 
-        public Disk()
+        public Disk(DiskImageFormat _diskImageFormat)
         {
-            spt = 128;
-            bsh = 5;
-            blm = 31;
-            exm = 1;
-            dsm = 2047;
-            drw = 511;
-            al0 = 240;
-            al1 = 0;
-            cks = 0;
-            off = 0;
+
+            if (_diskImageFormat == DiskImageFormat._64MB_Searle)
+            {
+                spt = 128;
+                bsh = 5;
+                blm = 31;
+                exm = 1;
+                dsm = 2047;
+                drw = 511;
+                first_dsm = 2043;
+                last_dsm = dsm;
+                al0 = 240;  //0b11110000;
+                al1 = 0;    //0b00000000;
+                cks = 0;
+                off = 0;
+
+                default_firstdiskstart = 0x4000;
+            }
+            else if (_diskImageFormat == DiskImageFormat.__ROMWBW)
+            {
+                spt = 64;
+                bsh = 5;
+                blm = 31;
+                exm = 1;
+                dsm = 2048 - 1;
+                first_dsm = dsm;
+                last_dsm = dsm;
+                drw = 512 - 1;
+                al0 = 0b11110000;
+                al1 = 0b00000000;
+                cks = 0x8080;
+                off = 16;
+                default_firstdiskstart = 0x20000;
+            }
+            else if (_diskImageFormat == DiskImageFormat._128MB_Searle)
+            {
+                spt = 128;
+                bsh = 5;
+                blm = 31;
+                exm = 1;
+                dsm = 2047;
+                first_dsm = 2043;
+                last_dsm = dsm;
+                drw = 511;
+                al0 = 240;  //0b11110000;
+                al1 = 0;    //0b00000000;
+                cks = 0;
+                off = 0;
+
+                default_firstdiskstart = 0x4000;
+            }
         }
 
         public void LoadDisk(Byte[] disk, int start)
         {
             int size = GetDiskSize();
-
-            if (start == 0 || start == 0x4000)
+            
+            if (start == 0 || start == default_firstdiskstart)
             {
-                dsm = 2043;
-                start = 0x4000;
+                dsm = first_dsm;
+                start = default_firstdiskstart;
                 size = (dsm + 1) * 0x1000;
                 off = 1;
             }
@@ -70,8 +114,9 @@ namespace cpm_disk_manager
             }
             else
             {
-                dsm = 2047;
+                dsm = last_dsm;
                 off = 0;
+                //size = GetDiskSize();
             }
 
             fileData = new byte[size];
@@ -270,7 +315,7 @@ namespace cpm_disk_manager
 
         public int GetDiskTotalBlocks()
         {
-            return (GetDiskSize() - 0x4000) / 0x1000;
+            return (GetDiskSize() - default_firstdiskstart) / 0x1000;
         }
 
         public List<short> GetFreeBlocks()
